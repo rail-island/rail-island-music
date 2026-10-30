@@ -64,10 +64,13 @@ export function writeAbc(perf: Performance, options: WriteOptions = {}): string 
       let line = `[V:${w.track.id}] ` + (perc && first === 0 ? "[K:C clef=perc] " : "");
       for (let k = first; k < last; k++) {
         const start = perf.bars[k]!;
-        line += barPrefix(perf, k, idx === 0, perc);
+        // A change at the start of a line is written at the end of the line before
+        // (abcjs fails on an inline key field that opens a voice's line).
+        if (k > first) line += barPrefix(perf, k, idx === 0, perc);
         line += writeBar(w.bars[k]!, keyAt(start), w.track.clef === "perc", idx === 0 ? chordsIn(perf, start, barEnd(k)) : []);
         line += k === perf.bars.length - 1 ? " |]" : " | ";
       }
+      if (last < perf.bars.length) line += barPrefix(perf, last, idx === 0, perc);
       out.push(line.trimEnd());
     });
   }

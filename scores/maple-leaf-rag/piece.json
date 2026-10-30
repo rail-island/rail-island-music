@@ -1,0 +1,11 @@
+{
+  "id": "maple-leaf-rag",
+  "title": "Maple Leaf Rag",
+  "composer": "Scott Joplin",
+  "year": 1899,
+  "set": "ragtime",
+  "groove": "oompah",
+  "swing": 0.5,
+  "defaults": { "ensemble": "ragtime-band", "tempo": "normal", "length": "full", "key": "0" },
+  "publicDomain": "Published in 1899; Joplin died in 1917."
+}

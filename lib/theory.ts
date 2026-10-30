@@ -61,9 +61,10 @@ export function tonicPc(name: string): number {
   return ((pc % 12) + 12) % 12;
 }
 
+// Longer names first: "mix" must not be read as "m" (minor).
 const MODE_NAMES: [string, Mode][] = [
-  ["maj", "major"], ["ion", "major"], ["min", "minor"], ["aeo", "minor"], ["m", "minor"],
-  ["dor", "dorian"], ["phr", "phrygian"], ["lyd", "lydian"], ["mix", "mixolydian"], ["loc", "locrian"],
+  ["maj", "major"], ["ion", "major"], ["min", "minor"], ["aeo", "minor"], ["dor", "dorian"],
+  ["phr", "phrygian"], ["lyd", "lydian"], ["mix", "mixolydian"], ["loc", "locrian"], ["m", "minor"],
 ];
 
 /** Parse an ABC K: value ("C", "Am", "Bb", "F#m", "D mix"); anything after the key (clef=...) is ignored. */

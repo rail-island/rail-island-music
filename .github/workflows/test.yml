@@ -1,0 +1,44 @@
+# Typecheck + Vitest on every push to `master` (and by hand on any branch).
+#
+# Runs beside deploy.yml rather than in front of it: a red run shows as a failed
+# check without holding the deploy back.
+
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version:` here: the action reads `packageManager` from package.json,
+      # and refuses to run when both name a version.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Runs even when the typecheck failed, so one run reports both problems.
+      - name: Test
+        if: '!cancelled()'
+        run: pnpm test

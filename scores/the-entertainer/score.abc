@@ -1,0 +1,44 @@
+X:1
+T:The Entertainer
+C:Scott Joplin
+S:A Ragtime Two Step (1902)
+M:2/4
+L:1/16
+Q:1/4=80
+P:IABRCDE
+V:mel role=melody name="Melody"
+K:C
+% Melody (the top line of the right hand) and the left hand's harmony as chord
+% symbols, from the Mutopia edition in this folder.
+P:I
+d'e'c'a- abg2 | dec A- ABG2 | DEC A,- A,B, A,_A, | "G7"G,2 z2 g2 D^D |
+P:A
+|: "C"E c2 E "C7"c2 E c- | "F"c5 "C/E"c'd'^d' | "C/G"e'c'd'e'- "G7"e'bd'2 | "C"c'6 D^D |
+"C"E c2 E "C7"c2 E c- | "F"c6 "C/E"ag | "D7"^fac'e'- e'd'c'a | "G"d'6 D^D |
+"C"E c2 E "C7"c2 E c- | "F"c5 "C/E"c'd'^d' | "C/G"e'c'd'e'- "G7"e'bd'2 | "C"c'6 c'd' |
+"C"e'c'd'e'- "C7"e'c'd'c' | "F"e'c'd'e'- "Fm"e'c'd'c' | "C/G"e'c'd'e'- "G7"e'bd'2 |[1 "C"c'6 D^D :|[2 "C"c'5 ef^f ||
+P:B
+|: "C"g2ag- gef^f | g2ag- gecG | "F"ABcd "Fm"edcd | "C"G efg agef |
+g2ag- gef^f | g2ag- gga^a | "G"bb2b- "D7"ba^fd | "G"g5 ef^f |
+"C"g2ag- gef^f | g2ag- gecG | "F"ABcd "Fm"edcd | "C"c5 "C7"G^FG |
+"F"c2Ac- "F#dim7"cAcA | "C"Gceg- gecG | "D7"A2c2 "G7"ed2c- |[1 "C"c5 ef^f :|[2 "C"c6 D^D ||
+P:R
+"C"E c2 E "C7"c2 E c- | "F"c5 "C/E"c'd'^d' | "C/G"e'c'd'e'- "G7"e'bd'2 | "C"c'6 D^D |
+"C"E c2 E "C7"c2 E c- | "F"c6 "C/E"ag | "D7"^fac'e'- e'd'c'a | "G"d'6 D^D |
+"C"E c2 E "C7"c2 E c- | "F"c5 "C/E"c'd'^d' | "C/G"e'c'd'e'- "G7"e'bd'2 | "C"c'6 c'd' |
+"C"e'c'd'e'- "C7"e'c'd'c' | "F"e'c'd'e'- "Fm"e'c'd'c' | "C/G"e'c'd'e'- "G7"e'bd'2 | "C"c'4 c'2z2 ||
+P:C
+K:F
+|: "F"A^GA2- A2c2 | "Bb"d8 | "Dm"fef2- f2a2 | "Gm"b7g | "Bb"d2gd- "G#dim7"dgd2 |
+"F"c4 "Dm"f4 | "E7"e^g=be'- e'd'=bc' | "Am"a4 "C7"b4 |
+"F"A^GA2- A2c2 | "Bb"d8 | "Dm"fef2- f2a2 | "Gm"b7g | "Bb"d2gd- "G#dim7"dgd2 |
+"F"c4 "Bbm/Db"f3f | "F/C"ac'2g- "C7"gcde |[1 "F"f2 B,CDEFG :|[2 "F"f2z2f2z2 ||
+P:D
+K:C
+"F"c2Ac- "F#dim7"cAcA | "C"Gceg- gecG | "D7"A2c2 "G7"ed2c- | "C"c4 c'2z2 ||
+P:E
+K:C
+|: "F"F2EF- FEF2 | zAdA cdcA | "C"G2^FG- G^FG2 | zcec dedc |
+"G7"d2^cd- d^cd2 | zfaf gagf | "D7"c'c'c'4a2 | "C"g2GG G2G2 |
+"F"F2EF- FEF2 | zAdA cdcA | "C"G2^FG- G^FG2 | zcec dedc |
+"F"A^GAg- gf2c | "C"e^dea- ac'ge | "A7"c2"D7"c2 "G7"ed2c- |[1 "C"c2GG G2G2 :|[2 "C"c4 c'2z2 |]

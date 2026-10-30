@@ -1,0 +1,41 @@
+X:1
+T:Maple Leaf Rag
+C:Scott Joplin
+M:2/4
+L:1/16
+Q:1/4=88
+P:ABRCD
+V:mel role=melody name="Melody"
+K:Ab
+% Melody (the top line of the right hand) and the left hand's harmony as chord
+% symbols, from the Mutopia edition in this folder.
+P:A
+K:Ab
+|: "Ab"zAeA ce2G | "Eb7"eGBe- e4 | "Ab"zAeA ce2G | "Eb7"eGBe- e2ze |
+"Fb"zA_c_f "Eb"zeze | "Fb"zA_c_f "Eb"zez2 | "Ab"zA,,_C,A, zA,_CA | zA_ca za_c'a' |
+"Bdim7"a'2a'2a'2a'a'- | "Ab"a'e'f'c' e'f'2a- | "Fb"ab_c'a "Ab"b=c'2a | "Ab"c'ab2 "Eb7"a2 za- |
+"Bdim7"a2a2a2aa- | "Ab"aefc ef2A- | "Fb"AB_cA "Ab"B=c2A |[1 "Ab"cAB2 "Eb7"A2z2 :|[2 "Ab"cAB2 "Eb7"A2z2 ||
+P:B
+K:Ab
+|: "Eb7"zge'g b=d'2g | d'gbc'- c'ebe | "Ab"zcac ef2c | acef- fcf2 |
+"Eb7"zegB df2e | gBdf- fdf2 | "Ab"zcac ef2c | acef- fcf2 |
+"Eb7"zge'g b=d'2g | d'gbc'- c'ebe | "Ab"zcac ef2c | a2a2g2_g2 |
+"F"zF=Ac fc=AF | "Bbm"zFBd f2d2 | "Bb7"c2zcz "Eb7"B2E |[1 "Ab"A2e2e2e2 :|[2 "Ab"zA,CE A2z2 ||
+P:R
+K:Ab
+"Ab"zAeA ce2G | "Eb7"eGBe- e4 | "Ab"zAeA ce2G | "Eb7"eGBe- e2ze |
+"Fb"zA_c_f "Eb"zeze | "Fb"zA_c_f "Eb"zez2 | "Ab"zA,,_C,A, zA,_CA | zA_ca za_c'a' |
+"Bdim7"a'2a'2a'2a'a'- | "Ab"a'e'f'c' e'f'2a- | "Fb"ab_c'a "Ab"b=c'2a | "Ab"c'ab2 "Eb7"a2 za- |
+"Bdim7"a2a2a2aa- | "Ab"aefc ef2A- | "Fb"AB_cA "Ab"B=c2A | "Ab"cAB2 "Eb7"A2 "Ab"a2 ||
+P:C
+K:Db
+|: "Ab7"a3a- aeB2 | a3a- aeBe | "Db"AdBd fAdf | BdfA- AfBf |
+"Ab7"a3a- aeB2 | a3a- aeBe | "Db"AdBd fAdf | BdfA- "F7"Af=Af |
+"Bb7"b3b- bfc2 | b3b- bfcf | "Ebm"zebe gc'2e | begc'- c'eb2 |
+"Gdim7"d'2d'2c'2b2 | "Db"fdeg- "Bb7"gBf2 | "Eb7"fdef- "Ab7"fced- |[1 "Db"da2f afaf :|[2 "Db"ddfa d'2z2 ||
+P:D
+K:Ab
+|: "Db"a2f2a2f2 | a2bc'- c'baf | "Ab"ef2c- c4 | zefc ef2c |
+"Eb7"e2fB- B4 | zdfB df2c- | "Ab"cefc ef2c- | cefc ef2e |
+"Db"a2f2a2f2 | a2bc'- c'baf | "Ab"a2f2e a2c- | cefc ef2A- |
+"Db"ABA2 "Bb7"A2BA- | "Ab"ABcA Bc2A- | "Eb7"ABcA zB2E |[1 "Ab"A2e2e2e2 :|[2 "Ab"A2e2a4 |]

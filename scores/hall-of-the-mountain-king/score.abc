@@ -1,0 +1,44 @@
+X:1
+T:In the Hall of the Mountain King
+C:Edvard Grieg
+S:Peer Gynt Suite No. 1, Op. 46
+M:4/4
+L:1/8
+Q:1/4=112
+P:ABCDEFGH
+V:mel role=melody name="Melody"
+K:Bm
+% The theme and its answer in F-sharp from the Mutopia edition in this folder,
+% climbing in register and speeding up section by section like the original.
+P:A
+Q:1/4=112
+"Bm"B,CDE FDF2 | "C#7"^EC^E2 "C"=E=C=E2 | "Bm"B,CDE FDFB | "D"AFDF A4 |
+"Bm"B,CDE FDF2 | "C#7"^EC^E2 "C"=E=C=E2 | "Bm"B,CDE FDFB | "D"AFDF A4 |
+P:B
+Q:1/4=116
+"F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c^Ac2 | "F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c4 |
+"F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c^Ac2 | "F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c4 |
+P:C
+Q:1/4=124
+"Bm"Bcde fdf2 | "C#7"^ec^e2 "C"=e=c=e2 | "Bm"Bcde fdfb | "D"afdf a4 |
+"Bm"Bcde fdf2 | "C#7"^ec^e2 "C"=e=c=e2 | "Bm"Bcde fdfb | "D"afdf a4 |
+P:D
+Q:1/4=132
+"F#"f^g^ab c'^ac'2 | "D+"d'^ad'2 "F#"c'^ac'2 | "F#"f^g^ab c'^ac'2 | "D+"d'^ad'2 "F#"c'4 |
+"F#"f^g^ab c'^ac'2 | "D+"d'^ad'2 "F#"c'^ac'2 | "F#"f^g^ab c'^ac'2 | "D+"d'^ad'2 "F#"c'4 |
+P:E
+Q:1/4=144
+"Bm"Bcde fdf2 | "C#7"^ec^e2 "C"=e=c=e2 | "Bm"Bcde fdfb | "D"afdf a4 |
+"Bm"Bcde fdf2 | "C#7"^ec^e2 "C"=e=c=e2 | "Bm"Bcde fdfb | "D"afdf a4 |
+P:F
+Q:1/4=156
+"F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c^Ac2 | "F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c4 |
+"F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c^Ac2 | "F#"F^G^AB c^Ac2 | "D+"d^Ad2 "F#"c4 |
+P:G
+Q:1/4=168
+"Bm"Bcde fdf2 | "C#7"^ec^e2 "C"=e=c=e2 | "Bm"Bcde fdfb | "D"afdf a4 |
+"Bm"Bcde fdf2 | "C#7"^ec^e2 "C"=e=c=e2 | "Bm"Bcdf fBfb | "Bm"fdfb B4 |
+P:H
+Q:1/4=176
+"Bm"z2b2 z4 | z2b2 z4 | "Bm"Bcde fdfb | "F#"^af^ac' "Bm"b4 |
+"Bm"z2b2 z4 | z2b2 z4 | "Bm"Bcde fdfb | "F#"^af^ac' "Bm"b4 | "Bm"B8 |]

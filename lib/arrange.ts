@@ -243,7 +243,11 @@ function median(notes: Timed[]): number {
   return p[Math.floor(p.length / 2)] ?? 60;
 }
 
-/** Shift a line by whole octaves so the most notes fall inside `range`; ties prefer the smaller shift. */
+/**
+ * Shift a line by whole octaves so the most notes fall inside `range` (ties
+ * prefer the smaller shift), then fold the few notes still outside it back in
+ * by octaves, so every note stays where the instrument has samples.
+ */
 export function fitRange(notes: Timed[], range: [number, number]): Timed[] {
   let best = 0;
   let bestInside = -1;
@@ -254,7 +258,13 @@ export function fitRange(notes: Timed[], range: [number, number]): Timed[] {
       bestInside = inside;
     }
   }
-  return best === 0 ? notes : notes.map((n) => ({ ...n, pitch: n.pitch + 12 * best }));
+  if (best === 0 && bestInside === notes.length) return notes;
+  return notes.map((n) => {
+    let pitch = n.pitch + 12 * best;
+    while (pitch < range[0]) pitch += 12;
+    while (pitch > range[1]) pitch -= 12;
+    return { ...n, pitch };
+  });
 }
 
 /** A second line under the melody: the nearest chord tone a third to a sixth below each longer note. */

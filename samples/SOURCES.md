@@ -15,7 +15,7 @@ octave lower than scientific pitch).
 
 | Folder | VSCO source | Use |
 |---|---|---|
-| `piano/` | Keys/Upright Piano, dynamic 2 | piano, every 8 semitones |
+| `piano/` | Keys/Upright Piano, dynamic 2 | piano, every 8 semitones from MIDI 29 to 93 |
 | `bass/` | Strings/Solo Contrabass/Pizz, v1 | jazz band double bass |
 | `trumpet/` | Brass/Trumpet/sus, v3 | trumpet lead |
 | `trombone/` | Brass/Tenor Trombone/sus, v2 | trombone, brass band horns |

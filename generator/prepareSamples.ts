@@ -21,7 +21,7 @@ interface Source {
 }
 
 // The upright piano's files are numbered by (MIDI pitch - 21) / 2 (its MappingChart.txt).
-const piano = [29, 37, 45, 53, 61, 69, 77, 85].map((p) => ({
+const piano = [29, 37, 45, 53, 61, 69, 77, 85, 93].map((p) => ({
   instrument: "piano",
   out: String(p),
   file: `Keys/Upright Piano/Player_dyn2_rr1_${String((p - 21) / 2).padStart(3, "0")}.wav`,
