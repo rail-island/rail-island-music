@@ -1,0 +1,11 @@
+{
+  "id": "when-the-saints",
+  "title": "When the Saints Go Marching In",
+  "composer": "Traditional",
+  "year": 1896,
+  "set": "early-jazz",
+  "groove": "two-beat",
+  "swing": 0.6,
+  "defaults": { "ensemble": "jazz-band", "tempo": "normal", "length": "full", "key": "0" },
+  "publicDomain": "Traditional African-American spiritual, published in 1896 and earlier; no author."
+}

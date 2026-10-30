@@ -1,0 +1,13 @@
+node_modules/
+.pnpm-store
+*.log
+*.tsbuildinfo
+.vite/
+vite.config.ts.timestamp-*
+.env
+.env.*
+
+# rail-island-music build output (reproducible: `pnpm build`)
+export/
+dist/
+.wrangler/
