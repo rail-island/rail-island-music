@@ -1,7 +1,7 @@
 # The catalog site (music.railisland.com)
 
-**Covers** - the Solid site that lists and plays every piece: the list, the piece page with parameters, player and score, the mini player, the URL state and the one stored setting.
-**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/PiecePage.tsx`, `src/ScoreView.tsx`, `src/MiniPlayer.tsx`, `src/music.ts`, `src/query.ts`, `src/music.css`, `src/favicon.svg`, `test/query.test.ts`
+**Covers** - the Solid site that lists and plays every piece: the list, the piece page with parameters, player and score, the mini player, the Sounds page's place in it, the URL state and the one stored setting.
+**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/PiecePage.tsx`, `src/SoundsPage.tsx`, `src/ScoreView.tsx`, `src/MiniPlayer.tsx`, `src/music.ts`, `src/query.ts`, `src/music.css`, `src/favicon.svg`, `test/query.test.ts`
 **See also** - [../music/export.md](../music/export.md), [../music/synth.md](../music/synth.md), [../guide/deploy.md](../guide/deploy.md)
 
 The site follows the factory's catalog in look (the same dark palette, app bar
@@ -32,6 +32,13 @@ default arrangement's length. A row opens the piece.
   reading order from the first voice's line and measure classes, so the bar
   under the playback is highlighted in every voice and scrolled into view, and
   a click on a note or rest of a bar seeks there.
+
+## The Sounds page
+
+The app bar's **Sounds** button opens `?sounds`: every sound design the game
+plays, each with its parameters as controls and Play (or Start/Stop for a loop).
+Its back arrow returns to the list. The page is
+[../sounds/sounds.md](../sounds/sounds.md)'s.
 
 ## The mini player
 

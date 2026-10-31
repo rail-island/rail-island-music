@@ -336,3 +336,38 @@ a {
     display: none;
   }
 }
+
+/* --- The Sounds page (src/SoundsPage.tsx) --------------------------------- */
+.music-bar__end {
+  margin-left: auto;
+}
+
+.music-sound {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--m-outline);
+  border-radius: var(--m-radius-sm);
+  background: var(--m-surface-1);
+}
+
+.music-sound__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.music-sound__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.music-sound__id {
+  color: var(--m-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.music-param input[type="range"] {
+  min-height: 32px;
+  accent-color: var(--m-primary);
+}

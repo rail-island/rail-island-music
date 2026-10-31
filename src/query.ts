@@ -1,5 +1,6 @@
 // The site's state in the query string (docs/site/catalog-site.md): the list's
-// search and set filter, the open piece, its parameters and the position.
+// search and set filter, the open piece, its parameters and the position -- or
+// the Sounds page (`?sounds`, docs/sounds/sounds.md).
 
 import { PARAMS, type ParamName } from "../lib/params.ts";
 import type { CatalogEntry } from "../lib/catalog.ts";
@@ -11,6 +12,8 @@ export interface ViewState {
   params: Partial<Record<ParamName, string>>;
   /** Seconds to start from, written when playback pauses. */
   t: number | null;
+  /** The Sounds page is open (it takes precedence over a piece). */
+  sounds?: boolean;
 }
 
 export function parseView(search: string): ViewState {
@@ -21,10 +24,13 @@ export function parseView(search: string): ViewState {
     if (v !== null && d.values.some((x) => x.value === v)) params[d.name] = v;
   }
   const t = Number(p.get("t"));
-  return { q: p.get("q") ?? "", set: p.get("set") ?? "", piece: p.get("piece"), params, t: Number.isFinite(t) && t > 0 ? t : null };
+  const view: ViewState = { q: p.get("q") ?? "", set: p.get("set") ?? "", piece: p.get("piece"), params, t: Number.isFinite(t) && t > 0 ? t : null };
+  if (p.has("sounds")) view.sounds = true;
+  return view;
 }
 
 export function serializeView(v: ViewState): string {
+  if (v.sounds) return "?sounds";
   const p = new URLSearchParams();
   if (v.q) p.set("q", v.q);
   if (v.set) p.set("set", v.set);

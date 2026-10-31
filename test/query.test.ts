@@ -9,6 +9,13 @@ describe("query string", () => {
     expect(parseView(serializeView(v))).toEqual(v);
   });
 
+  it("opens the Sounds page from ?sounds, whatever else is there", () => {
+    const v = parseView("?sounds&piece=maple-leaf-rag");
+    expect(v.sounds).toBe(true);
+    expect(serializeView(v)).toBe("?sounds");
+    expect(parseView("?piece=maple-leaf-rag").sounds).toBeUndefined();
+  });
+
   it("filters by words and set", () => {
     const e = (title: string, composer: string, set: string) => ({ title, composer, set, year: 1900 }) as CatalogEntry;
     const list = [e("Maple Leaf Rag", "Scott Joplin", "ragtime"), e("Rondo alla Turca", "Mozart", "classical")];

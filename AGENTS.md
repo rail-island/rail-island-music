@@ -4,8 +4,14 @@
 `music.railisland.com`. Public-domain pieces are written once as ABC scores;
 the generator arranges them (ensemble, tempo, length, key), exports note data,
 the arranged score and a WebAudio synth with its samples. The game
-(`rail-island-webapp`) does not import anything yet: whether it will is decided
+(`rail-island-webapp`) does not import the music yet: whether it will is decided
 after listening (docs/specs/2026-10-30-music-generator-catalog.md).
+
+This repository is also the **source of the game's sound effects**
+(docs/sounds/sounds.md): every horn, whistle, bell and knock is a synthesized
+design in `sounds/`, exported as `export/sounds/sounds.js` and mirrored into the
+game by its `pnpm import:sounds`, the way rail-island-factory's models are. A
+sound is changed here and re-imported there, never edited in the game.
 
 ## Documentation (`docs/`)
 
@@ -24,7 +30,9 @@ document that owns it in the same change.** Conventions:
 
 - **TypeScript (strict)**. `lib/` (parser, arranger, ABC writer) is isomorphic:
   the generator and the site run the same code. `synth/` is browser-only.
-  `generator/` is Node-only, run with `tsx`.
+  `sounds/` is the game's sound designs, browser-only like `synth/` (Web Audio
+  nodes, no DOM), and `sounds/types.ts` is types only: it is written out as the
+  bundle's `.d.ts`. `generator/` is Node-only, run with `tsx`.
 - The site is **Solid** (`solid-js`) + **Vite**, abcjs for the score. Do not use
   React APIs; use signals, `createEffect`/`onMount`/`onCleanup`,
   `<Show>`/`<For>`, do not destructure props, `class` not `className`.
@@ -36,6 +44,9 @@ document that owns it in the same change.** Conventions:
 
 - **`lib/` and `src/` never import `generator/`** or anything `node:`.
 - **Piece ids are permanent once published** - the game may store them.
+- **Sound ids are permanent once the game plays them**, and so are their
+  parameter names: the game names both in code. Adding a parameter is fine
+  (with a default); renaming or removing one is a change in the game too.
 - **Output stays deterministic**: no timestamps, no randomness, no unordered
   iteration in what is written.
 - **Public domain only** (docs/music/scores.md): a composition must be PD in

@@ -1,12 +1,14 @@
 // The whole site: the catalog of every piece the generator arranges, a piece
-// page that plays it and shows its score, and a mini player that keeps playing
-// while you browse (docs/site/catalog-site.md). Its state is the URL's query
+// page that plays it and shows its score, a mini player that keeps playing
+// while you browse (docs/site/catalog-site.md), and the Sounds page that plays
+// the game's sound designs (docs/sounds/sounds.md). Its state is the URL's query
 // string (query.ts), so the browser's back button walks it.
 
 import { For, Show, createMemo, createResource, createSignal, onCleanup, onMount } from "solid-js";
 import { SETS } from "../lib/params.ts";
 import { MiniPlayer } from "./MiniPlayer";
 import { PiecePage } from "./PiecePage";
+import { SoundsPage } from "./SoundsPage";
 import { loadCatalog } from "./music";
 import { filterPieces, formatTime, parseView, serializeView, type ViewState } from "./query";
 import logoUrl from "./rail-island-logo.webp";
@@ -36,7 +38,8 @@ export function App() {
     if (opening) window.scrollTo(0, 0);
   };
 
-  const entry = createMemo(() => catalog()?.pieces.find((p) => p.id === view().piece) ?? null);
+  const entry = createMemo(() => (view().sounds ? null : catalog()?.pieces.find((p) => p.id === view().piece) ?? null));
+  const list = (): ViewState => ({ q: view().q, set: view().set, piece: null, params: {}, t: null });
   const shown = createMemo(() => filterPieces(catalog()?.pieces ?? [], view().q, view().set));
   const setTitle = (id: string) => SETS.find((s) => s.id === id)?.title ?? id;
 
@@ -49,7 +52,25 @@ export function App() {
         <Show
           when={entry()}
           fallback={
-            <h1 class="music-bar__title">Rail Island Music</h1>
+            <Show
+              when={view().sounds}
+              fallback={
+                <>
+                  <h1 class="music-bar__title">Rail Island Music</h1>
+                  <button class="music-btn music-bar__end" onClick={() => go({ ...list(), sounds: true })}>
+                    Sounds
+                  </button>
+                </>
+              }
+            >
+              <button class="music-btn music-bar__back" title="Back to the list" onClick={() => go(list())}>
+                &larr;
+              </button>
+              <h1 class="music-bar__title">
+                Sounds
+                <span class="music-bar__sub">the game's sound designs</span>
+              </h1>
+            </Show>
           }
         >
           {(e) => (
@@ -69,6 +90,7 @@ export function App() {
       <main class="music-main">
         <Show when={!catalog.error} fallback={<p class="music-error">{String(catalog.error?.message ?? catalog.error)}</p>}>
           <Show when={catalog()} fallback={<p class="music-muted">Loading the catalog...</p>}>
+            <Show when={!view().sounds} fallback={<SoundsPage />}>
             <Show
               when={entry()}
               fallback={
@@ -134,6 +156,7 @@ export function App() {
               }
             >
               {(e) => <PiecePage entry={e()} catalog={catalog()!} view={view()} go={go} />}
+            </Show>
             </Show>
           </Show>
         </Show>
