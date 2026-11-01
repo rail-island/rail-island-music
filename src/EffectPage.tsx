@@ -4,13 +4,17 @@
 // game. It plays the design from source -- the very code the generator bundles
 // into export/sounds/sounds.js -- through one AudioContext of its own, created on
 // the first press (browsers start audio only from a gesture). Leaving the page
-// stops whatever it still plays (src/audition.ts).
+// stops whatever it still plays (src/audition.ts). Below, the recordings the
+// design was matched to (src/ReferenceList.tsx) play through the same chain, so
+// the spectrogram shows them too; the design and a recording take turns.
 
 import { For, Show, createSignal, onCleanup } from "solid-js";
 import { categoryById } from "../sounds/index.ts";
 import type { SoundDesign, SoundParam, SoundValues } from "../sounds/types.ts";
 import { type Audition, createAudition } from "./audition";
 import { KIND_TITLES } from "./catalogList";
+import { ReferenceList } from "./ReferenceList";
+import { referencesFor } from "./references";
 
 /** The spectrogram's frequency ceiling (Hz): every sound here lives below it. */
 const SPECTRUM_TOP = 8000;
@@ -82,10 +86,18 @@ export function EffectPage(props: { design: SoundDesign }) {
   const [running, setRunning] = createSignal(false);
   // Until when the spectrogram draws: a loop while it runs, a one-shot until it ends.
   const [drawUntil, setDrawUntil] = createSignal(0);
+  const [refPlaying, setRefPlaying] = createSignal(false);
   let audition: Audition | null = null;
   let startDrawing: () => void = () => {};
+  // The page's reference players, and those already routed into the context (once each).
+  const players: HTMLAudioElement[] = [];
+  const routed = new WeakSet<HTMLAudioElement>();
 
-  const active = () => !!audio && (running() || audio.ctx.currentTime < drawUntil());
+  const active = () => !!audio && (running() || refPlaying() || audio.ctx.currentTime < drawUntil());
+
+  const pauseRefs = (except?: HTMLAudioElement) => {
+    for (const p of players) if (p !== except && !p.paused) p.pause();
+  };
 
   const set = (name: string, v: number | string) => {
     setValues({ ...values(), [name]: v });
@@ -101,10 +113,25 @@ export function EffectPage(props: { design: SoundDesign }) {
   // Leaving the page silences it: the loop and every one-shot still ringing.
   onCleanup(() => {
     audition?.stopAll();
+    pauseRefs();
     setRunning(false);
   });
 
+  // A recording started: through the page's chain to the spectrogram, alone.
+  const playRef = (el: HTMLAudioElement) => {
+    const { ctx, out } = output();
+    if (!routed.has(el)) {
+      ctx.createMediaElementSource(el).connect(out);
+      routed.add(el);
+    }
+    pauseRefs(el);
+    if (running()) stopLoop();
+    setRefPlaying(true);
+    startDrawing();
+  };
+
   const press = () => {
+    pauseRefs();
     const d = props.design;
     const { ctx, out } = output();
     audition ??= createAudition(ctx, out);
@@ -186,6 +213,12 @@ export function EffectPage(props: { design: SoundDesign }) {
         />
         <figcaption class="sound-muted">Spectrogram, 0-8 kHz: time runs left to right, louder is brighter.</figcaption>
       </figure>
+      <ReferenceList
+        references={referencesFor(props.design.id)}
+        register={(el) => players.push(el)}
+        onPlay={playRef}
+        onPause={() => setRefPlaying(players.some((p) => !p.paused))}
+      />
     </section>
   );
 }

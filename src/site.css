@@ -331,3 +331,43 @@ a {
   color: var(--m-on-surface-variant);
   font-size: 0.8rem;
 }
+
+.sound-refs {
+  margin-top: 28px;
+  max-width: 720px;
+}
+
+.sound-refs-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.sound-ref {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--m-outline);
+  border-radius: var(--m-radius-md);
+  background: var(--m-surface-1);
+}
+
+.sound-ref-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.sound-ref-note {
+  margin: 4px 0 10px;
+}
+
+.sound-ref-player {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.sound-ref-source {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--m-on-surface-variant);
+  overflow-wrap: anywhere;
+}

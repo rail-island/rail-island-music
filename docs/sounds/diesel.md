@@ -117,9 +117,10 @@ the last one (a low thud). The turbo spins down on its own, slower.
 
 ## The reference recordings
 
-The engines were matched to these recordings: they were analysed, not copied,
-and no audio is stored in this repository. The archive.org reels are CC0 sound
-effects from the USC Cinema and Sunset Editorial collections.
+The engines were matched to these recordings: they were analysed, not copied.
+Excerpts of them are kept in `references/` and play on each engine's page
+([references.md](references.md)). The archive.org reels are CC0 sound effects
+from the USC Cinema and Sunset Editorial collections.
 
 | Recording | Source, licence | What it gave |
 |---|---|---|

@@ -1,7 +1,7 @@
 # The catalog site (sound.railisland.com)
 
 **Covers** - the Solid site that lists and plays every sound Rail Island plays: one sortable table with each sound's cost metrics, its search, category and kind filters; a sound's page with its spectrogram; stopping what a page plays when it is left; the URL state.
-**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/catalogList.ts`, `src/EffectPage.tsx`, `src/audition.ts`, `src/query.ts`, `src/site.css`, `src/favicon.svg`, `test/query.test.ts`, `test/catalogList.test.ts`, `test/audition.test.ts`
+**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/catalogList.ts`, `src/EffectPage.tsx`, `src/ReferenceList.tsx`, `src/references.ts`, `src/audition.ts`, `src/query.ts`, `src/site.css`, `src/favicon.svg`, `test/query.test.ts`, `test/catalogList.test.ts`, `test/audition.test.ts`
 **See also** - [../sounds/sounds.md](../sounds/sounds.md), [../guide/deploy.md](../guide/deploy.md)
 
 The site follows the factory's catalog in look (the same dark palette, app bar
@@ -52,10 +52,16 @@ with its filters.
   - It is drawn from an analyser at the end of the page's own audio chain, only
     while something sounds (a loop while it runs, a one-shot until it ends).
   - The last picture stays.
+- **Reference recordings** - the recordings the sound was matched to, each with
+  a player, what it gave the design and its source and licence
+  ([../sounds/references.md](../sounds/references.md)). A recording plays
+  through the same chain, so the spectrogram draws it too. It takes turns with
+  the design: a recording pauses the other recordings and stops a running loop,
+  Play or Start pauses the recordings. A sound without references shows none.
 
 **Leaving stops it.** What the page plays is held by an audition
 (`src/audition.ts`): the running loop, ticked every 50 ms 0.2 s ahead, and every
-one-shot still ringing. When the page is left - the back arrow, the browser's
+one-shot still ringing (and the page pauses its reference recordings). When the page is left - the back arrow, the browser's
 Back, another sound opened from the URL - the page is unmounted (the detail is
 a keyed `<Show>`, so another sound is another page) and `stopAll` fades out the
 loop and every one-shot. A tolling bell or a horn's call no longer rings on
