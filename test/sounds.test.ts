@@ -114,13 +114,8 @@ describe("the designs", () => {
         const { ctx, dest, starts } = stubContext();
         if (d.kind === "oneShot") {
           const v = d.play(ctx, dest, 1, values);
-          // The one silent call: a diesel's or an electric's horn as it leaves.
-          if (d.id === "loco-horn" && values.call === "departure") {
-            expect(starts, d.id).toHaveLength(0);
-          } else {
-            expect(v.endsAt, d.id).toBeGreaterThan(1);
-            expect(starts.length, d.id).toBeGreaterThan(0);
-          }
+          expect(v.endsAt, d.id).toBeGreaterThan(1);
+          expect(starts.length, d.id).toBeGreaterThan(0);
           v.stop(1.1);
         } else {
           const v = d.start(ctx, dest, 1, values);
@@ -367,22 +362,18 @@ describe("the bells", () => {
 describe("the parameters", () => {
   it("clamp a number and default an unknown choice", () => {
     const horn = soundById("loco-horn")!;
-    expect(resolveValues(horn.params, { pitch: 9000, call: "nonsense" })).toEqual({ pitch: 500, call: "crossing", level: 1 });
-    expect(resolveValues(horn.params, undefined)).toEqual({ pitch: 300, call: "crossing", level: 1 });
+    expect(resolveValues(horn.params, { pitch: 9000, call: "nonsense" })).toEqual({ pitch: 500, call: "departure", level: 1 });
+    expect(resolveValues(horn.params, undefined)).toEqual({ pitch: 300, call: "departure", level: 1 });
   });
 
-  it("give a whistle's departure two blasts that never overlap, and every other call one", () => {
-    const blasts = hornPattern("whistle", "departure");
-    expect(blasts).toHaveLength(2);
-    expect(blasts[1]![0]).toBeGreaterThanOrEqual(blasts[0]![0] + blasts[0]![1]);
+  it("give a departure two blasts that never overlap, and every other call one", () => {
     for (const kind of ["horn", "whistle"] as const) {
+      const blasts = hornPattern(kind, "departure");
+      expect(blasts).toHaveLength(2);
+      expect(blasts[1]![0]).toBeGreaterThanOrEqual(blasts[0]![0] + blasts[0]![1]);
       for (const call of ["crossing", "tunnel", "player"]) expect(hornPattern(kind, call)).toHaveLength(1);
       expect(hornPattern(kind, "tunnel")[0]![1]).toBeGreaterThan(hornPattern(kind, "player")[0]![1]);
     }
-  });
-
-  it("leave a diesel's or an electric's departure silent: only steam whistles as it leaves", () => {
-    expect(hornPattern("horn", "departure")).toEqual([]);
   });
 
   it("make a harder-working engine louder", () => {
