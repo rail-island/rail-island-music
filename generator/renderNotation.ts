@@ -1,7 +1,7 @@
 // Render an arrangement's score to a PNG headlessly, with the same abcjs the
 // site uses (docs/guide/setup-and-build.md):
 //
-//   pnpm exec tsx generator/renderNotation.ts <piece id> <out.png> [param=value ...] [--bars=N] [--width=PX]
+//   pnpm exec tsx generator/renderNotation.ts <piece or jingle id> <out.png> [param=value ...] [--bars=N] [--width=PX]
 //
 // `--bars` keeps the first N bars (default 16). Needs Playwright's Chromium
 // (pre-installed in the cloud sessions; not a dependency of this repository).
@@ -9,11 +9,9 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { writeAbc } from "../lib/abcWrite.ts";
-import { arrange } from "../lib/arrange.ts";
-import { resolveParams } from "../lib/params.ts";
 import type { Performance } from "../lib/performance.ts";
 import { launchChromium } from "./headless.ts";
-import { loadPieces } from "./scores.ts";
+import { arrangeById } from "./arrangeById.ts";
 
 /** The first `count` bars of a performance. */
 export function sliceBars(perf: Performance, count: number): Performance {
@@ -40,9 +38,7 @@ export function sliceBars(perf: Performance, count: number): Performance {
 
 async function main(): Promise<void> {
   const [id, out, ...rest] = process.argv.slice(2);
-  if (!id || !out) throw new Error("usage: renderNotation.ts <piece id> <out.png> [param=value ...] [--bars=N] [--width=PX]");
-  const piece = loadPieces().find((p) => p.meta.id === id);
-  if (!piece) throw new Error(`No piece ${id}`);
+  if (!id || !out) throw new Error("usage: renderNotation.ts <piece or jingle id> <out.png> [param=value ...] [--bars=N] [--width=PX]");
   const overrides: Record<string, string> = {};
   let bars = 16;
   let width = 1000;
@@ -54,7 +50,7 @@ async function main(): Promise<void> {
       overrides[k!] = v!;
     }
   }
-  const perf = sliceBars(arrange(piece.meta, piece.score, resolveParams(piece.meta, overrides)), bars);
+  const perf = sliceBars(arrangeById(id, overrides), bars);
   const abc = writeAbc(perf);
   const abcjs = readFileSync(createRequire(import.meta.url).resolve("abcjs/dist/abcjs-basic-min.js"), "utf8");
   const browser = await launchChromium();

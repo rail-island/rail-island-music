@@ -1,7 +1,7 @@
 // `pnpm build:music`: writes the export folder (docs/music/export.md) - the
 // catalog, the source scores, every piece's default arrangement as note data
 // and as ABC, the synth bundle, the samples and the game's sound designs
-// (generator/sounds.ts). Deterministic: the same sources give the same bytes.
+// (generator/sounds.ts), and the site's copy of the jingles (generator/jingles.ts). Deterministic: the same sources give the same bytes.
 
 import { copyFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -12,6 +12,7 @@ import { catalogEntry } from "../lib/catalog.ts";
 import { PARAMS, SETS } from "../lib/params.ts";
 import type { SampleManifest } from "../synth/instruments.ts";
 import { loadPieces } from "./scores.ts";
+import { writeJingles } from "./jingles.ts";
 import { writeSounds } from "./sounds.ts";
 
 export const EXPORT_DIR = "export";
@@ -56,6 +57,7 @@ function main(): void {
     legalComments: "none",
   });
   writeSounds(out);
+  writeJingles(out);
   console.log(`${pieces.length} pieces -> ${out}/`);
 }
 

@@ -32,6 +32,16 @@ describe("spelling", () => {
     expect(spellPitch(63, parseKey("Bb"))).toMatchObject({ letter: "E", accidental: -1 });
     expect(spellPitch(60, parseKey("C"))).toMatchObject({ letter: "C", accidental: 0, octave: 4 });
   });
+
+  it("writes a note the signature alters, played plain, as a natural -- not as the next letter raised", () => {
+    // Regression: C natural in D major came out as B#, and F natural as E#.
+    expect(spellPitch(60, parseKey("D"))).toMatchObject({ letter: "C", accidental: 0, octave: 4 });
+    expect(spellPitch(65, parseKey("D"))).toMatchObject({ letter: "F", accidental: 0 });
+    expect(spellPitch(71, parseKey("F"))).toMatchObject({ letter: "B", accidental: 0 });
+    // and the leading tone of a minor key is still raised
+    expect(spellPitch(61, parseKey("Dm"))).toMatchObject({ letter: "C", accidental: 1 });
+    expect(transposeChord(parseChord("D7/C")!, 0, parseKey("D")).symbol).toBe("D7/C");
+  });
 });
 
 describe("chords", () => {

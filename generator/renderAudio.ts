@@ -1,7 +1,7 @@
 // Render an arrangement to an audio file headlessly, through the very synth
 // the site and the game use (docs/guide/setup-and-build.md):
 //
-//   pnpm exec tsx generator/renderAudio.ts <piece id> <out.mp3|out.wav> [param=value ...] [--seconds=N]
+//   pnpm exec tsx generator/renderAudio.ts <piece or jingle id> <out.mp3|out.wav> [param=value ...] [--seconds=N]
 //
 // Needs `pnpm build:music` first (it serves export/), ffmpeg for MP3, and
 // Playwright's Chromium (pre-installed in the cloud sessions; not a dependency
@@ -13,10 +13,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { extname, join, normalize } from "node:path";
-import { arrange } from "../lib/arrange.ts";
-import { resolveParams } from "../lib/params.ts";
 import { launchChromium } from "./headless.ts";
-import { loadPieces } from "./scores.ts";
+import { arrangeById } from "./arrangeById.ts";
 
 const RATE = 32000;
 
@@ -29,9 +27,7 @@ const TYPES: Record<string, string> = {
 
 async function main(): Promise<void> {
   const [id, out, ...rest] = process.argv.slice(2);
-  if (!id || !out) throw new Error("usage: renderAudio.ts <piece id> <out.mp3|out.wav> [param=value ...] [--seconds=N]");
-  const piece = loadPieces().find((p) => p.meta.id === id);
-  if (!piece) throw new Error(`No piece ${id}`);
+  if (!id || !out) throw new Error("usage: renderAudio.ts <piece or jingle id> <out.mp3|out.wav> [param=value ...] [--seconds=N]");
   const overrides: Record<string, string> = {};
   let seconds = Infinity;
   for (const r of rest) {
@@ -41,7 +37,7 @@ async function main(): Promise<void> {
       overrides[k!] = v!;
     }
   }
-  const perf = arrange(piece.meta, piece.score, resolveParams(piece.meta, overrides));
+  const perf = arrangeById(id, overrides);
   const length = Math.min(perf.duration + 2.5, seconds);
 
   const root = "export";

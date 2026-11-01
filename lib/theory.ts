@@ -136,9 +136,10 @@ export interface Spelling {
 }
 
 /**
- * Spell a MIDI pitch in a key: notes of the signature take its letters; other
- * pitch classes are spelt as the raised note below in sharp and neutral keys
- * (and as the raised seventh in minor), as the lowered note above in flat keys.
+ * Spell a MIDI pitch in a key: notes of the signature take its letters; a note
+ * the signature alters, played plain, takes a natural sign; other pitch classes
+ * are spelt as the raised note below in sharp and neutral keys (and as the
+ * raised seventh in minor), as the lowered note above in flat keys.
  */
 export function spellPitch(midi: number, key: Key): Spelling {
   const pc = ((midi % 12) + 12) % 12;
@@ -155,6 +156,11 @@ export function spellPitch(midi: number, key: Key): Spelling {
   }
   const diatonic = candidates.find((c) => acc[c.letter] === c.accidental);
   if (diatonic) return diatonic;
+  // A note the signature alters, played plain: written with a natural sign on
+  // its own letter (C natural in D major, B natural in F major), never as the
+  // neighbouring letter raised or lowered (B#, Cb).
+  const cancelled = candidates.find((c) => c.accidental === 0 && acc[c.letter] !== 0);
+  if (cancelled) return cancelled;
   const leadingTone = (key.tonic + 11) % 12;
   const preferSharp = key.fifths >= 0 || (key.mode === "minor" && pc === leadingTone);
   const pick = (dir: number) =>

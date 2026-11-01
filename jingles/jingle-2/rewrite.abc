@@ -1,0 +1,13 @@
+X:1
+T:Jingle 2
+C:Rail Island
+M:4/4
+L:1/8
+Q:1/4=112
+V:mel role=melody name="Melody"
+V:bass role=bass name="Bass"
+K:C
+V:mel
+"C"G E D C "G7"G,A, B,D | "C"c2 G2 [EGc]4 |]
+V:bass
+C,,2 G,,2 G,,,2 B,,,2 | C,,2 G,,2 C,,4 |]
