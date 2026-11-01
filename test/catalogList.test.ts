@@ -40,7 +40,7 @@ describe("the list", () => {
 
   it("searches every word across title, composer, kind, group and description", () => {
     expect(filterRows(rows, "joplin", "", "").map((r) => r.id)).toEqual(["maple-leaf-rag"]);
-    expect(filterRows(rows, "bell", "", "").map((r) => r.id)).toEqual(["crossing-bell"]);
+    expect(filterRows(rows, "bell", "", "").map((r) => r.id)).toEqual(["crossing-bell", "church-bell", "big-ben", "notre-dame-bell"]);
     expect(filterRows(rows, "sound effect ship", "", "").map((r) => r.id)).toEqual(["ship-horn"]);
     expect(filterRows(rows, "maple turca", "", "")).toEqual([]);
   });
@@ -49,6 +49,6 @@ describe("the list", () => {
     expect(groupsOf(rows, "").length).toBe(0);
     expect(groupsOf(rows, "jingle").length).toBe(0);
     expect(groupsOf(rows, "piece").map((g) => g.id)).toEqual(["ragtime", "classical"]);
-    expect(groupsOf(rows, "effect").map((g) => g.id)).toEqual(["trains", "ships", "water", "editor"]);
+    expect(groupsOf(rows, "effect").map((g) => g.id)).toEqual(["trains", "ships", "water", "nature", "bells", "editor"]);
   });
 });

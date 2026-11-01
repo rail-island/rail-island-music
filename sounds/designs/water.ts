@@ -5,20 +5,26 @@
 // sequence, so a render sounds the same every time. A loop schedules only as far
 // ahead as it is ticked, like every loop here.
 
-import { LEVEL, filter, gain, loop, noiseSource, num, strike, voiceOf } from "../nodes.ts";
+import { LEVEL, filter, gain, loop, noiseSource, num, seeded, strike, voiceOf } from "../nodes.ts";
 import type { LoopVoice, SoundValues } from "../types.ts";
 
-/** A small seeded random sequence (mulberry32): 0..1. */
-export function seeded(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+export { seeded };
+
+/**
+ * How loud each water loop plays at `level` 1, as a factor on its output. The
+ * water is ambient and plays for as long as it is in view, so it sits well below
+ * the trains: about -31 LUFS for a rapid, a fall or a spring and -33 LUFS for the
+ * surf at their defaults, under a running steam beat (about -30 LUFS) and far
+ * under a horn (about -15 LUFS). Without it they played at -14 to -22 LUFS,
+ * louder than any locomotive.
+ */
+export const WATER_TRIM = {
+  "river-rapids": 0.12,
+  waterfall: 0.14,
+  "spring-fountain": 0.15,
+  "sea-surf": 0.25,
+} as const;
+
 
 /**
  * A loop of continuous parts plus events: `wander` moves the continuous parts
@@ -79,7 +85,7 @@ export const riverRapids = loop({
     LEVEL,
   ],
   start(ctx, dest, t, initial) {
-    const out = gain(ctx, num(initial, "level"));
+    const out = gain(ctx, num(initial, "level") * WATER_TRIM["river-rapids"]);
     out.connect(dest);
     // The bed: noise through two wandering band-passes, a low rush and a
     // brighter splash.
@@ -132,7 +138,7 @@ export const waterfall = loop({
     LEVEL,
   ],
   start(ctx, dest, t, initial) {
-    const out = gain(ctx, num(initial, "level"));
+    const out = gain(ctx, num(initial, "level") * WATER_TRIM["waterfall"]);
     out.connect(dest);
     const roar = noiseSource(ctx, true);
     const body = filter(ctx, "lowpass", 900, 0.5);
@@ -172,7 +178,7 @@ export const springFountain = loop({
     LEVEL,
   ],
   start(ctx, dest, t, initial) {
-    const out = gain(ctx, num(initial, "level"));
+    const out = gain(ctx, num(initial, "level") * WATER_TRIM["spring-fountain"]);
     out.connect(dest);
     // The hiss of the jets and the basin's splash.
     const hiss = noiseSource(ctx, true);
@@ -220,7 +226,7 @@ export const seaSurf = loop({
     LEVEL,
   ],
   start(ctx, dest, t, initial) {
-    const out = gain(ctx, num(initial, "level"));
+    const out = gain(ctx, num(initial, "level") * WATER_TRIM["sea-surf"]);
     out.connect(dest);
     const sea = noiseSource(ctx, true);
     // The rush of the water and the hiss on top of it.

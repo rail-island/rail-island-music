@@ -48,7 +48,7 @@ export interface LoopVoice extends Voice {
 }
 
 /** What a sound belongs to, for grouping it in the catalog; the game ignores it. */
-export type SoundCategory = "trains" | "ships" | "water" | "editor";
+export type SoundCategory = "trains" | "ships" | "water" | "nature" | "bells" | "editor";
 
 interface DesignBase {
   /** Permanent once the game plays it: the game names designs by id. */

@@ -1,11 +1,12 @@
 # Sounds
 
-**Covers** - the game's sound effects: every horn, whistle, bell, water and knock
+**Covers** - the game's sound effects: every horn, whistle, engine, bell, water, woods and knock
 Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
-`sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/editor.ts`,
+`sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
+`sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`
 **See also** - [../music/export.md](../music/export.md),
 [../site/catalog-site.md](../site/catalog-site.md); in the game,
@@ -56,12 +57,17 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `loco-horn` | one-shot | `pitch` 150-500 Hz, `call`, `level` | the two-tone air horn of a diesel, an electric or a multiple unit: a three-reed sawtooth chord (root, major third, fifth) through a soft low-pass |
 | `steam-whistle` | one-shot | `pitch` 400-1100 Hz, `call`, `level` | a steam locomotive's whistle: three sine pipes sliding up onto the note, over band-passed noise |
 | `steam-chuff` | loop | `rate` 0-12 beats/s, `intensity` 0..1, `level` | the exhaust beat: looped noise through a band-pass, gated by one struck envelope per beat; every fourth beat heavier; loudness `0.3 + 0.7 * intensity` |
+| `diesel-engine` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `level` | a diesel's engine: a sawtooth at the firing rate and a square at half of it through a low-pass that opens with `load`, band-passed exhaust noise chopped at the firing rate, and a thin turbo whine rising with `rpm`; every change glides (about 0.35 s), and the revs drift a little every 0.3 s (seeded) |
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
 | `waterfall` | loop | `size` 0..1, `level` | a steady roar: low-passed noise, a deep rumble and a little spray hiss, wandering every 0.25 s; the bigger, the lower and heavier |
 | `sea-surf` | loop | `strength` 0..1, `level` | the sea on a shore: a steady wash, a low rush and a hiss whose filter and level drift slowly (every 0.7 s, seeded), swelling and settling with no single waves; fuller the stronger |
 | `spring-fountain` | loop | `size` 0..1, `level` | a spring, which the game draws as a fountain: the jets' hiss and the basin's splash, with a bright patter of droplets (band-passed noise clicks, 20-60 a second) |
+| `woods` | loop | `density` 0..1 (0.6), `birds` 0..1 (0.6), `level` | a forest around the listener: leaves rustling in slow gusts (band-passed noise every 1.2 s) over a low breath of wind, and now and then a bird of a flock of five calling (chirps, a two-note whistle or a trill), seconds apart (`birdGap`), more often the denser and livelier; no birds at `birds` 0 |
+| `church-bell` | one-shot | `pitch` 200-900 Hz (440), `strikes` 1-12 (3), `interval` 0.8-6 s (2.2), `ring` 0.3-1.5, `level` | a village church bell tolling: nine partials of a tuned bell (`CHURCH_PARTIALS`) and the clapper's clang per strike |
+| `big-ben` | one-shot | `pitch` 100-260 Hz (165, E), `strikes` (the hour, 3), `chime` `quarters` / `hour`, `ring`, `level` | the Great Bell of the Westminster clock tower: twinned, beating partials (`GREAT_BELL_PARTIALS`), struck every 4.5 s; with `quarters`, first the Westminster Quarters' last four changes on the four quarter bells (G#4 F#4 E4 B3, kept in tune with `pitch`) |
+| `notre-dame-bell` | one-shot | `pitch` 60-160 Hz (92.5, F#), `strikes` 1-12 (4), `interval` 1.5-8 s (3.4), `ring`, `level` | Emmanuel, the bourdon of Notre-Dame de Paris: a deep bell whose hum rings about 22 s (`BOURDON_PARTIALS`) |
 | `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit |
 | `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit |
 
@@ -92,6 +98,33 @@ Continuous filtered noise has filters and gains that wander, and the scattered
 events on top (a rapid's bubbles, a fountain's droplets) are drawn from a seeded
 random sequence (`seeded`, mulberry32). A render therefore sounds the same every
 time, and like every loop they schedule only as far ahead as they are ticked.
+
+**The levels.** The loops the game plays continuously are trimmed against one
+another, measured as EBU R128 integrated loudness of a render at the defaults
+(`generator/renderSound.ts`, through its compressor):
+
+| Design | LUFS |
+|---|---|
+| `steam-chuff` | -30.6 (-27.5 at full effort) |
+| `diesel-engine` | -29.6 (-38 idling, -24 at full revs and effort) |
+| `river-rapids`, `waterfall`, `spring-fountain` | about -31 |
+| `sea-surf` | -33.7 |
+| `woods` | -38 |
+| a horn's blast, for comparison | about -15 |
+
+The water is ambient and plays as long as it is in view, so it sits under the
+running engines. Each water loop multiplies its `level` by its `WATER_TRIM`
+(`sounds/designs/water.ts`); they used to play at -14 to -22 LUFS, louder than
+any locomotive. The woods are quieter still.
+
+**The bells** are one-shots that play a whole ringing and end by themselves once
+the last strike's longest partial, the hum, has died (`bellTail`). A strike is
+one sine per partial, started together and each decaying at its own rate, plus
+a short band of noise for the clapper. The Westminster Quarters (William Crotch,
+1793, public domain) are written in `WESTMINSTER_CHANGES` from the well-known
+five changes; they were not checked against a recording. The three bells'
+partial tables are typical values for tuned bells, not measurements of the real
+ones. The game plays none of the bells yet.
 
 **The calls** (`call`, `hornPattern`) are why a train sounds. Each is a pattern
 of blasts:
@@ -138,9 +171,10 @@ someone a sound.
 
 ## Categories
 
-Every design has a `category`: `trains` (horn, whistle, exhaust beat, crossing
-bell), `ships` (ship horn), `water` (rapids, waterfall, spring fountain, sea
-surf) or `editor` (build, demolish). The site's list groups the effects by it.
+Every design has a `category`: `trains` (horn, whistle, exhaust beat, diesel
+engine, crossing bell), `ships` (ship horn), `water` (rapids, waterfall, spring
+fountain, sea surf), `nature` (woods), `bells` (church bell, Big Ben,
+Notre-Dame bourdon) or `editor` (build, demolish). The site's list groups the effects by it.
 It is part of `sounds.meta.json` and the contract, as an additive field the game
 ignores, so it needs no format bump.
 
@@ -173,6 +207,13 @@ press. The old `?sounds` page is gone and its link lands on the filtered list.
   and never past what they were ticked for;
 - the bell keeps the measured shape of the recording (main tone, the x1.51
   partial, the beating twin);
+- the water's output stays trimmed under the engines, and the woods under the water;
+- the diesel fires faster as it revs and lower the bigger it is, and schedules
+  only as far ahead as asked;
+- the woods sing the same birds every time, more the denser and livelier, none
+  at `birds` 0;
+- the bells ring the Quarters' four last changes before the hour and end once
+  rung out;
 - values are resolved as described;
 - the call patterns hold;
 - the export lists every design and `types.ts` stays types only.

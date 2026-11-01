@@ -31,6 +31,8 @@ export const CATEGORY_TITLES: Record<SoundCategory, string> = {
   trains: "Trains",
   ships: "Ships",
   water: "Water",
+  nature: "Nature",
+  bells: "Bells",
   editor: "Editor",
 };
 

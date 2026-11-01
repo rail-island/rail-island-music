@@ -3,7 +3,7 @@
 // (docs/sounds/sounds.md). The game derives the pitch from the locomotive's
 // weight and the beat's rate from its speed; the call is why it sounds.
 
-import { LEVEL, choice, envelope, filter, gain, loop, noiseSource, num, oneShot, strike, voiceOf } from "../nodes.ts";
+import { LEVEL, choice, envelope, filter, gain, loop, noiseSource, num, oneShot, seeded, strike, voiceOf } from "../nodes.ts";
 import type { SoundParam, SoundValues } from "../types.ts";
 
 /** Why a train sounds; each call has its own pattern of blasts. */
@@ -275,3 +275,114 @@ export const crossingBell = loop({
     };
   },
 });
+
+/**
+ * A diesel engine's firing rate, in combustions per second, from how big it is
+ * and how fast it turns. A small railcar's engine idles near 30 a second and runs
+ * up to about 110; a big mainline diesel turns slower and fires lower, from 20 to
+ * about 70 (`size` 1).
+ */
+export function dieselFiring(size: number, rpm: number): number {
+  const idle = 30 - 10 * size;
+  const full = 110 - 40 * size;
+  return idle + (full - idle) * rpm;
+}
+
+/** How loud a diesel engine runs, 0..1, from its revs and how hard it works. */
+export function dieselLevel(rpm: number, load: number): number {
+  return 0.35 + 0.3 * rpm + 0.35 * load;
+}
+
+export const dieselEngine = loop({
+  id: "diesel-engine",
+  title: "Diesel engine",
+  category: "trains",
+  description: "A diesel locomotive's or railcar's engine: a low chugging drone that revs up with the speed and growls harder as it works, with a turbo's whine on top.",
+  params: [
+    { name: "rpm", title: "Revs", kind: "number", min: 0, max: 1, step: 0.05, default: 0.4 },
+    { name: "load", title: "Effort", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
+    { name: "size", title: "Size", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
+    LEVEL,
+  ],
+  start(ctx, dest, t, initial) {
+    // about -29 LUFS at the defaults: beside a running steam beat, under a horn
+    const out = gain(ctx, num(initial, "level") * 0.12);
+    out.connect(dest);
+    const body = gain(ctx, 0);
+    body.connect(out);
+    const fire = dieselFiring(num(initial, "size"), num(initial, "rpm"));
+    // The combustions: a sawtooth at the firing rate and a square at half of it
+    // (a four-stroke's uneven pairs), through a low-pass that opens as it works.
+    const tone = filter(ctx, "lowpass", 260, 1.2);
+    tone.connect(body);
+    const saw = ctx.createOscillator();
+    saw.type = "sawtooth";
+    saw.frequency.value = fire;
+    const sawGain = gain(ctx, 0.5);
+    saw.connect(sawGain).connect(tone);
+    const half = ctx.createOscillator();
+    half.type = "square";
+    half.frequency.value = fire / 2;
+    const halfGain = gain(ctx, 0.22);
+    half.connect(halfGain).connect(tone);
+    // The exhaust: noise through a band-pass, chopped by the firing rate.
+    const exhaust = noiseSource(ctx, true);
+    const exBand = filter(ctx, "bandpass", 420, 0.8);
+    const exGain = gain(ctx, 0.35);
+    const chop = ctx.createOscillator();
+    chop.type = "sine";
+    chop.frequency.value = fire;
+    const chopDepth = gain(ctx, 0.25);
+    chop.connect(chopDepth).connect(exGain.gain);
+    exhaust.connect(exBand).connect(exGain).connect(body);
+    // The turbo: a thin sine high above, only when it works and revs.
+    const turbo = ctx.createOscillator();
+    turbo.type = "sine";
+    turbo.frequency.value = 1800;
+    const turboGain = gain(ctx, 0);
+    turbo.connect(turboGain).connect(body);
+    const sources = [saw, half, exhaust, chop, turbo];
+    for (const s of sources) s.start(t);
+    const base = voiceOf(out, sources, Infinity);
+    const rnd = seeded(0xd1e5);
+    let v: SoundValues = initial;
+    let next = t;
+    let stopped = false;
+    // An engine has inertia: every change glides over about half a second.
+    const apply = (at: number, wobble: number) => {
+      const rpm = num(v, "rpm");
+      const load = num(v, "load");
+      const f = dieselFiring(num(v, "size"), rpm) * wobble;
+      saw.frequency.setTargetAtTime(f, at, 0.35);
+      half.frequency.setTargetAtTime(f / 2, at, 0.35);
+      chop.frequency.setTargetAtTime(f, at, 0.35);
+      tone.frequency.setTargetAtTime(200 + 500 * load + 300 * rpm, at, 0.3);
+      exBand.frequency.setTargetAtTime(300 + 400 * rpm, at, 0.3);
+      exGain.gain.setTargetAtTime(0.2 + 0.3 * load, at, 0.3);
+      turbo.frequency.setTargetAtTime(1500 + 1600 * rpm, at, 0.8);
+      turboGain.gain.setTargetAtTime(0.012 * rpm * (0.3 + load), at, 0.6);
+      body.gain.setTargetAtTime(dieselLevel(rpm, load), at, 0.3);
+    };
+    apply(t, 1);
+    return {
+      endsAt: Infinity,
+      stop(at) {
+        stopped = true;
+        base.stop(at);
+      },
+      set(values) {
+        v = values;
+      },
+      tick(now, horizon) {
+        if (stopped) return;
+        if (next < now) next = now;
+        // The revs never sit quite still: a small drift every 0.3 s.
+        while (next < now + horizon) {
+          apply(next, 0.985 + 0.03 * rnd());
+          next += 0.3;
+        }
+      },
+    };
+  },
+});
+

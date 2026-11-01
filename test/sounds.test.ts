@@ -7,7 +7,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SOUNDS, SOUNDS_FORMAT, resolveValues, soundById } from "../sounds/index.ts";
 import { BELL_PARTIALS, bellGap, chuffLevel, hornPattern } from "../sounds/designs/trains.ts";
-import { seeded } from "../sounds/designs/water.ts";
+import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
+import { birdGap } from "../sounds/designs/nature.ts";
+import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
+import { dieselFiring, dieselLevel } from "../sounds/designs/trains.ts";
 import { soundsDeclarations, soundsMeta } from "../generator/sounds.ts";
 import type { SoundDesign, SoundValues } from "../sounds/types.ts";
 
@@ -82,6 +85,8 @@ describe("the designs", () => {
       "sea-surf",
       "edit-build",
       "edit-demolish",
+      "diesel-engine",
+      "woods",
     ]) {
       expect(soundById(id), id).toBeDefined();
     }
@@ -231,6 +236,126 @@ describe("the water", () => {
     const xs = Array.from({ length: 5 }, a);
     expect(Array.from({ length: 5 }, b)).toEqual(xs);
     for (const x of xs) expect(x >= 0 && x < 1).toBe(true);
+  });
+});
+
+describe("the levels", () => {
+  /** The gain the design's output node is created with at `level` 1: the first gain made. */
+  function outputGain(id: string): number {
+    const { ctx, dest } = stubContext();
+    const gains: Array<{ gain: { value: number } }> = [];
+    const spy = ctx as unknown as { createGain: () => { gain: { value: number } } };
+    const make = spy.createGain;
+    spy.createGain = () => {
+      const g = make();
+      gains.push(g);
+      return g;
+    };
+    const d = soundById(id)!;
+    if (d.kind !== "loop") throw new Error(`${id} is a loop`);
+    d.start(ctx, dest, 0, { level: 1 });
+    return gains[0]!.gain.value;
+  }
+
+  it("keep the water well under a running locomotive", () => {
+    // Regression: the water played at its full level, -14 to -22 LUFS, louder
+    // than a horn and far louder than a running steam beat (-30 LUFS).
+    for (const id of ["river-rapids", "waterfall", "spring-fountain", "sea-surf"] as const) {
+      expect(outputGain(id), id).toBe(WATER_TRIM[id]);
+      expect(WATER_TRIM[id], id).toBeLessThanOrEqual(0.25);
+    }
+  });
+
+  it("keep the woods quieter than the water", () => {
+    expect(outputGain("woods")).toBeLessThan(0.3);
+  });
+});
+
+describe("the diesel engine", () => {
+  it("fires faster as it revs, and a big engine lower than a small one", () => {
+    expect(dieselFiring(0.5, 1)).toBeGreaterThan(dieselFiring(0.5, 0));
+    expect(dieselFiring(1, 0.5)).toBeLessThan(dieselFiring(0, 0.5));
+    expect(dieselFiring(1, 0)).toBeGreaterThanOrEqual(20);
+    expect(dieselFiring(0, 1)).toBeLessThanOrEqual(110);
+  });
+
+  it("runs louder the harder it works, and is never silent", () => {
+    expect(dieselLevel(1, 1)).toBeGreaterThan(dieselLevel(0, 0));
+    expect(dieselLevel(0, 0)).toBeGreaterThan(0);
+    expect(dieselLevel(1, 1)).toBeLessThanOrEqual(1);
+  });
+
+  it("schedules only as far ahead as asked", () => {
+    const { ctx, dest } = stubContext();
+    const targets: number[] = [];
+    const spy = ctx as unknown as { createOscillator: () => { frequency: { setTargetAtTime: (v: number, at: number) => void } } };
+    const make = spy.createOscillator;
+    spy.createOscillator = () => {
+      const o = make();
+      o.frequency.setTargetAtTime = (_v, at) => targets.push(at);
+      return o;
+    };
+    const d = soundById("diesel-engine")!;
+    if (d.kind !== "loop") throw new Error("diesel-engine is a loop");
+    const v = d.start(ctx, dest, 0, {});
+    v.tick(0, 1);
+    expect(Math.max(...targets)).toBeLessThan(1);
+    v.stop(1);
+    const n = targets.length;
+    v.tick(1, 1);
+    expect(targets).toHaveLength(n);
+  });
+});
+
+describe("the woods", () => {
+  function birdNotes(values: SoundValues, seconds: number): number[] {
+    const { ctx, dest, starts } = stubContext();
+    const d = soundById("woods")!;
+    if (d.kind !== "loop") throw new Error("woods is a loop");
+    const v = d.start(ctx, dest, 0, values);
+    for (let now = 0; now < seconds; now += 1 / 60) v.tick(now, 0.2);
+    return starts.filter((s) => s.what === "osc").map((s) => Number(s.at.toFixed(5)));
+  }
+
+  it("sing the same birds every time, more in a denser, livelier wood", () => {
+    const calm = birdNotes({ density: 0.2, birds: 0.3 }, 60);
+    expect(calm.length).toBeGreaterThan(0);
+    expect(birdNotes({ density: 0.2, birds: 0.3 }, 60)).toEqual(calm);
+    expect(birdNotes({ density: 1, birds: 1 }, 60).length).toBeGreaterThan(calm.length);
+  });
+
+  it("are only leaves without birds", () => {
+    expect(birdNotes({ birds: 0 }, 30)).toEqual([]);
+  });
+
+  it("space the calls out: seconds apart, never a constant chatter", () => {
+    expect(birdGap(1, 1, 0)).toBeGreaterThanOrEqual(1.4);
+    expect(birdGap(0, 0.1, 0.5)).toBeGreaterThan(birdGap(1, 1, 0.5));
+  });
+});
+
+describe("the bells", () => {
+  it("ring the Westminster Quarters' four last changes before the hour", () => {
+    const { notes } = hourChime();
+    expect(notes).toHaveLength(16);
+    expect(notes.map(([, b]) => b)).toEqual(WESTMINSTER_CHANGES.slice(1).flat());
+    for (let i = 1; i < notes.length; i++) expect(notes[i]![0]).toBeGreaterThan(notes[i - 1]![0]);
+  });
+
+  it("ring out as long as their longest partial, the hum", () => {
+    expect(bellTail(CHURCH_PARTIALS, 1)).toBe(CHURCH_PARTIALS.find((p) => p.ratio === 0.5)!.ring);
+  });
+
+  it("end by themselves after the last strike has rung out", () => {
+    for (const id of ["church-bell", "big-ben", "notre-dame-bell"]) {
+      const { ctx, dest } = stubContext();
+      const d = soundById(id)!;
+      if (d.kind !== "oneShot") throw new Error(`${id} is a one-shot`);
+      const one = d.play(ctx, dest, 0, { strikes: 1, chime: "hour" });
+      const three = d.play(ctx, dest, 0, { strikes: 3, chime: "hour" });
+      expect(three.endsAt, id).toBeGreaterThan(one.endsAt);
+      expect(Number.isFinite(three.endsAt), id).toBe(true);
+    }
   });
 });
 

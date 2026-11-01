@@ -3,9 +3,11 @@
 // export/sounds/sounds.js, which the game imports with `pnpm import:sounds`; the
 // site's Sounds page plays the same designs from source.
 
+import { bigBen, churchBell, notreDameBell } from "./designs/bells.ts";
 import { editBuild, editDemolish } from "./designs/editor.ts";
 import { shipHorn } from "./designs/ships.ts";
-import { crossingBell, locoHorn, steamChuff, steamWhistle } from "./designs/trains.ts";
+import { crossingBell, dieselEngine, locoHorn, steamChuff, steamWhistle } from "./designs/trains.ts";
+import { woods } from "./designs/nature.ts";
 import { riverRapids, seaSurf, springFountain, waterfall } from "./designs/water.ts";
 import { resolve } from "./nodes.ts";
 import type { SoundDesign, SoundMeta } from "./types.ts";
@@ -17,12 +19,17 @@ export const SOUNDS: readonly SoundDesign[] = [
   locoHorn,
   steamWhistle,
   steamChuff,
+  dieselEngine,
   crossingBell,
   shipHorn,
   riverRapids,
   waterfall,
   springFountain,
   seaSurf,
+  woods,
+  churchBell,
+  bigBen,
+  notreDameBell,
   editBuild,
   editDemolish,
 ];
