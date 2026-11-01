@@ -10,16 +10,17 @@ recording polished, not rewritten:
 
 - 3/4 in D, eight bars: D, D/C#, D/C, G/B, D, A7, D, D (the chord names are the
   user's).
-- Bars 1-3 are harp chords: the right hand rolls D-F#-A quickly up to the
-  melody's B (`!arpeggio!`), then C#-F#-A and C-F#-A the same way (the
-  recording has C#-A and C-A there; the F# follows bar 1, as the user asked).
+- Bars 1-3 are harp chords: the right hand rolls D-F#-A quickly
+  (`!arpeggio!`), then C#-F#-A and C-F#-A the same way (the recording has C#-A
+  and C-A there; the F# follows bar 1, as the user asked). The roll's top A is
+  the first melody note: A-B-A-F#-G, B an eighth after A.
   The left hand rolls up from the bass (D-A-D-F#-D-A, then the same over C#
   and C). Bar 4 (G/B) has no harp chord: a plain B octave, then B-D-G and B.
-- The melody B-A-F#-G, twice, then B-A over F#/A; a G-A-B run up to D; then
+- The melody A-B-A-F#-G, twice, then A-B-A over F#/A; a G-A-B run up to D; then
   G-F#-D-F#, E-E-D-C# and a rising D arpeggio to the closing D chord.
 - Polished: quantized to eighths on one steady tempo (the recording rushes
   bars 1-3 and slows in bars 4, 6 and 7), the stray and zero-length touches and
-  the grace notes dropped (the A before each B in bars 1-3, F# before G in
+  the grace notes dropped (F# before G in
   bar 5, F# between the Es in bar 6), the third bar's rushed roll put on the
   beats of the first two, and the pedalled notes written as held notes. No
   notes, chords or voices were added.

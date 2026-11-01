@@ -9,7 +9,7 @@ V:harm role=harmony name="Harmony"
 V:bass role=bass name="Bass"
 K:D
 V:mel
-"D"!arpeggio![DFAB]2 A F2 G | "D/C#"!arpeggio![CFAB]2 A F2 G | "D/C"!arpeggio![=CFAB]2 A [FA]2 z | "G/B"(3G/A/B/ d2 d B G | "D"G2 F D2 F | "A7"E2 E D2 C | "D"D4 D F/A/ | "D"d6 |]
+"D"!arpeggio![DFA] B A F2 G | "D/C#"!arpeggio![CFA] B A F2 G | "D/C"!arpeggio![=CFA] B A [FA]2 z | "G/B"(3G/A/B/ d2 d B G | "D"G2 F D2 F | "A7"E2 E D2 C | "D"D4 D F/A/ | "D"d6 |]
 V:harm
 x6 | x6 | x6 | D5 B, | A,6 | [A,C]4 A,2 | A,3 A,3 | [DF]6 |]
 V:bass

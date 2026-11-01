@@ -44,7 +44,7 @@ so solo piano plays exactly what was recorded.
 
 | Jingle | Key | What it is |
 |---|---|---|
-| `jingle-1` | D, 3/4 | harp chords D, D/C#, D/C (the right hand rolls D-F#-A, C#-F#-A, C-F#-A up to the melody's B, the left hand rolls up from the bass) under B-A-F#-G, a plain G/B with a run up to D, then D, A7 and a rising D arpeggio to the close |
+| `jingle-1` | D, 3/4 | harp chords D, D/C#, D/C (the right hand rolls D-F#-A, C#-F#-A, C-F#-A, its top A starting the melody A-B-A-F#-G; the left hand rolls up from the bass), a plain G/B with a run up to D, then D, A7 and a rising D arpeggio to the close |
 
 ## Parameters and arranging
 

@@ -84,13 +84,34 @@ describe("jingles", () => {
       expect(new Set(roll.map((n) => n.start)).size, `bar ${i + 1}`).toBe(3);
     }
     expect(firstBeat(3).map((n) => n.start)).toEqual([0, 0]);
-    // The right hand rolls its chord up to the melody's B: D-F#-A, C#-F#-A, C-F#-A.
+    // The right hand rolls D-F#-A, C#-F#-A, C-F#-A; its top A starts the melody
+    // A-B-A-F#-G, with B an eighth later.
     const rolled = (i: number) =>
       bars[i]!.voices.mel!.filter((n) => n.start === 0).sort((a, b) => (a.roll ?? 0) - (b.roll ?? 0)).map((n) => n.pitch);
     expect([0, 1, 2].map(rolled)).toEqual([
-      [62, 66, 69, 71],
-      [61, 66, 69, 71],
-      [60, 66, 69, 71],
+      [62, 66, 69],
+      [61, 66, 69],
+      [60, 66, 69],
+    ]);
+    // The top line: the highest note at each onset.
+    const topLine = (i: number) => {
+      const top = new Map<number, number>();
+      for (const n of bars[i]!.voices.mel!) top.set(n.start, Math.max(top.get(n.start) ?? 0, n.pitch));
+      return [...top].sort((a, b) => a[0] - b[0]);
+    };
+    for (const i of [0, 1]) {
+      expect(topLine(i), `bar ${i + 1}`).toEqual([
+        [0, 69],
+        [PPQ / 2, 71],
+        [PPQ, 69],
+        [(3 * PPQ) / 2, 66],
+        [(5 * PPQ) / 2, 67],
+      ]);
+    }
+    expect(topLine(2).slice(0, 3)).toEqual([
+      [0, 69],
+      [PPQ / 2, 71],
+      [PPQ, 69],
     ]);
     expect(bars[3]!.voices.mel!.some((n) => n.roll)).toBe(false);
   });
