@@ -131,10 +131,14 @@ of blasts:
 
 | Call | Horn | Whistle |
 |---|---|---|
-| `departure` | 0.3 s high (x1.26), then 0.45 s root | 0.35 s, then 0.9 s |
+| `departure` | silent: only steam sounds as it leaves | 0.35 s, then 0.9 s |
 | `crossing` | 1.0 s | 1.1 s |
 | `tunnel` | 1.3 s | 1.4 s |
 | `player` | 0.6 s | 0.8 s |
+
+Only steam sounds as it leaves a platform, so the horn's `departure` has no
+blast and the horn defaults to `crossing` (the whistle to `departure`): every
+design still sounds at its defaults.
 
 To add a design, write it in `sounds/designs/` with `/* @__PURE__ */ oneShot` or `loop`
 (`sounds/nodes.ts`; [Metrics](#metrics)), give it a `category`, and list it in `SOUNDS`

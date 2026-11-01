@@ -6,19 +6,24 @@
 import { LEVEL, choice, envelope, filter, gain, loop, noiseSource, num, oneShot, seeded, strike, voiceOf } from "../nodes.ts";
 import type { SoundParam, SoundValues } from "../types.ts";
 
-/** Why a train sounds; each call has its own pattern of blasts. */
-const CALL: SoundParam = {
-  name: "call",
-  title: "Call",
-  kind: "choice",
-  values: [
-    { value: "departure", title: "Departure (two blasts)" },
-    { value: "crossing", title: "Level crossing (one long)" },
-    { value: "tunnel", title: "Tunnel (one longer)" },
-    { value: "player", title: "Player (one short)" },
-  ],
-  default: "departure",
-};
+/**
+ * Why a train sounds; each call has its own pattern of blasts. The horn defaults
+ * to a crossing, since its departure is silent; the whistle to a departure.
+ */
+function callParam(def: "departure" | "crossing"): SoundParam {
+  return {
+    name: "call",
+    title: "Call",
+    kind: "choice",
+    values: [
+      { value: "departure", title: "Departure (whistle: two blasts; horn: silent)" },
+      { value: "crossing", title: "Level crossing (one long)" },
+      { value: "tunnel", title: "Tunnel (one longer)" },
+      { value: "player", title: "Player (one short)" },
+    ],
+    default: def,
+  };
+}
 
 /** The blasts of one call: [start offset s, length s, pitch factor]. */
 export function hornPattern(kind: "horn" | "whistle", call: string): Array<[number, number, number]> {
@@ -29,9 +34,10 @@ export function hornPattern(kind: "horn" | "whistle", call: string): Array<[numb
     if (call === "tunnel") return [[0, 1.4, 1]];
     return [[0, 0.8, 1]];
   }
-  // The two-tone horn: high then low on departure, one long low blast before a
-  // crossing or a tunnel.
-  if (call === "departure") return [[0, 0.3, 1.26], [0.36, 0.45, 1]];
+  // The two-tone horn: one long low blast before a crossing or a tunnel. Only
+  // steam whistles as it leaves a platform: a diesel or an electric departs
+  // without a sound, so its departure call has no blast.
+  if (call === "departure") return [];
   if (call === "crossing") return [[0, 1.0, 1]];
   if (call === "tunnel") return [[0, 1.3, 1]];
   return [[0, 0.6, 1]];
@@ -41,10 +47,10 @@ export const locoHorn = /* @__PURE__ */ oneShot({
   id: "loco-horn",
   title: "Locomotive horn",
   category: "trains",
-  description: "A diesel's, an electric's or a multiple unit's two-tone air horn: leaving a platform, before a crossing or a tunnel, or on the player's Horn.",
+  description: "A diesel's, an electric's or a multiple unit's two-tone air horn: before a crossing or a tunnel, or on the player's Horn. It leaves a platform without one.",
   params: [
     { name: "pitch", title: "Pitch", kind: "number", min: 150, max: 500, step: 5, default: 300, unit: "Hz" },
-    CALL,
+    callParam("crossing"),
     LEVEL,
   ],
   play(ctx, dest, t, v) {
@@ -84,7 +90,7 @@ export const steamWhistle = /* @__PURE__ */ oneShot({
   description: "A steam locomotive's whistle, played where another locomotive would sound its horn.",
   params: [
     { name: "pitch", title: "Pitch", kind: "number", min: 400, max: 1100, step: 10, default: 700, unit: "Hz" },
-    CALL,
+    callParam("departure"),
     LEVEL,
   ],
   play(ctx, dest, t, v) {
