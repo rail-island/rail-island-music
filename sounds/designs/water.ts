@@ -205,3 +205,74 @@ export const springFountain = loop({
     );
   },
 });
+
+/**
+ * The sea on a shore: a quiet steady wash under waves that come every 6-10 s,
+ * unevenly. A wave rises as a swelling low rush, breaks bright at its peak,
+ * and draws back with the hiss of shingle. `strength` is the size of the waves.
+ */
+export const seaSurf = loop({
+  id: "sea-surf",
+  title: "Sea surf",
+  category: "water",
+  description: "Waves on the sea shore: a quiet wash with waves rising, breaking and drawing back over shingle every 6-10 s, bigger the stronger.",
+  params: [
+    { name: "strength", title: "Strength", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
+    LEVEL,
+  ],
+  start(ctx, dest, t, initial) {
+    const out = gain(ctx, num(initial, "level"));
+    out.connect(dest);
+    // The steady wash of the sea.
+    const sea = noiseSource(ctx, true);
+    const wash = filter(ctx, "lowpass", 600, 0.5);
+    const washGain = gain(ctx, 0.12);
+    sea.connect(wash).connect(washGain).connect(out);
+    sea.start(t);
+    return waterLoop(
+      ctx, out, [sea], t, initial, 0x5e45, 0.5,
+      (at, v, rnd) => {
+        washGain.gain.setTargetAtTime((0.08 + 0.08 * num(v, "strength")) * (0.85 + 0.3 * rnd()), at, 0.6);
+      },
+      (_v, rnd) => 6 + rnd() * 4,
+      (at, v, rnd) => {
+        const s = num(v, "strength");
+        const size = (0.35 + 0.65 * s) * (0.8 + 0.4 * rnd());
+        const rise = 1.4 + rnd() * 0.8;
+        const fall = 2.2 + rnd() * 1.2;
+        const peak = at + rise;
+        // The wave: a rush whose filter opens as it rises and closes as it ebbs.
+        const body = noiseSource(ctx, true);
+        const lp = filter(ctx, "lowpass", 300, 0.6);
+        const bg = gain(ctx);
+        body.connect(lp).connect(bg).connect(out);
+        lp.frequency.setValueAtTime(300, at);
+        lp.frequency.exponentialRampToValueAtTime(2200 + 1800 * s, peak);
+        lp.frequency.exponentialRampToValueAtTime(400, peak + fall);
+        bg.gain.setValueAtTime(0.0001, at);
+        bg.gain.exponentialRampToValueAtTime(0.55 * size, peak);
+        bg.gain.exponentialRampToValueAtTime(0.0001, peak + fall);
+        body.start(at);
+        body.stop(peak + fall + 0.05);
+        // The break: a bright splash at the crest.
+        const crash = noiseSource(ctx, false);
+        const hp = filter(ctx, "bandpass", 2800, 0.7);
+        const cg = gain(ctx);
+        crash.connect(hp).connect(cg).connect(out);
+        strike(cg.gain, peak - 0.1, 0.3 * size, 0.9);
+        crash.start(peak - 0.1);
+        crash.stop(peak + 1);
+        // The draw-back: shingle hissing as the water runs back down.
+        const shingle = noiseSource(ctx, true);
+        const sh = filter(ctx, "highpass", 3500, 0.7);
+        const sg = gain(ctx);
+        shingle.connect(sh).connect(sg).connect(out);
+        sg.gain.setValueAtTime(0.0001, peak + 0.3);
+        sg.gain.exponentialRampToValueAtTime(0.12 * size, peak + 0.9);
+        sg.gain.exponentialRampToValueAtTime(0.0001, peak + fall + 0.6);
+        shingle.start(peak + 0.3);
+        shingle.stop(peak + fall + 0.7);
+      },
+    );
+  },
+});

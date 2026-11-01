@@ -6,7 +6,7 @@
 import { editBuild, editDemolish } from "./designs/editor.ts";
 import { shipHorn } from "./designs/ships.ts";
 import { crossingBell, locoHorn, steamChuff, steamWhistle } from "./designs/trains.ts";
-import { riverRapids, springFountain, waterfall } from "./designs/water.ts";
+import { riverRapids, seaSurf, springFountain, waterfall } from "./designs/water.ts";
 import { resolve } from "./nodes.ts";
 import type { SoundDesign, SoundMeta } from "./types.ts";
 
@@ -22,6 +22,7 @@ export const SOUNDS: readonly SoundDesign[] = [
   riverRapids,
   waterfall,
   springFountain,
+  seaSurf,
   editBuild,
   editDemolish,
 ];
