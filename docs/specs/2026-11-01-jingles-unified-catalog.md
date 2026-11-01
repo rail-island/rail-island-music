@@ -2,7 +2,7 @@
 
 Status: agreed
 Date: 2026-11-01
-Area: rail-island-music (scores, generator, export, catalog site); rail-island-webapp (in-game top bar, mobile portrait)
+Area: rail-island-music (scores, generator, export, catalog site, sound designs); rail-island-webapp (in-game top bar, mobile portrait; sea surf sound, db/sounds import)
 
 ## Context of the change
 `rail-island-music` holds two kinds of things today:
@@ -24,6 +24,12 @@ the game later. There is no "jingle" kind yet.
 The site has two separate surfaces (the pieces table and the sounds page),
 unlike the factory site's single filterable catalog.
 
+The game's water sounds (`river-rapids`, `waterfall`, `spring-fountain`) come from
+the water tiles' flow features and the springs. The director plays the nearest 3
+in view as ambient loops. The sea makes no sound. The game knows where the sea is:
+`WaterState.sea` marks the water connected to the map's edge, so a coast is the
+dry cells next to it.
+
 In the game, the top bar's speaker (mute) button
 (`rail-island-webapp/src/ui/GameTopBar.tsx`) shows on every layout, including a
 phone held upright, where the bar is crowded. The game already has a
@@ -41,6 +47,10 @@ has the same mute switch.
    way the factory has it. Clicking a sound shows its detail and lets it be
    played, and shows the notes where they exist, as now. Jingles are another
    kind.
+
+(Added later)
+4. Also add surf sounds to the specification, when the player is looking at the
+   coast.
 
 ## Decisions
 ### In what form should the jingles be stored in the music repo (the source of truth)?
@@ -126,6 +136,27 @@ has the same mute switch.
 | Only on the site for now | The export does not change; jingles live only on the site until a version is chosen. |
 **Answer: Only on the site for now.** The site still needs their scores, so they reach it through a site-only part of what the build writes, which is not part of what the game would import.
 
+### Where should the surf be heard?
+| Option | What it means |
+|---|---|
+| Sea coast only (Recommended) | Waves on the shore of the sea (the water connected to the map's edge). Lakes and rivers are calm; no surf there. |
+| Sea and large lakes | A weaker lapping on the shores of large lakes too. |
+**Answer: Sea coast only.**
+
+### How should the surf work alongside the other water sounds?
+| Option | What it means |
+|---|---|
+| Its own 1-2 voices, the nearest coast in view (Recommended) | The surf has its own limit (the nearest 1-2 stretches of coast in view) and takes no voice from rapids or waterfalls. Ambient: it plays while paused. Strength by the length of shore in view. |
+| Share the 3 water voices | The surf competes with rapids, waterfalls and springs for the shared 3 voices, nearest first. |
+**Answer: Its own 1-2 voices, the nearest coast in view.**
+
+### What should the surf sound like?
+| Option | What it means |
+|---|---|
+| Waves in a rhythm + a wash (Recommended) | Regular waves (the rise, the break, the draw-back with the hiss of shingle), roughly every 6-10 s and not evenly, over a quiet steady wash of the sea. A strength parameter (wave size). |
+| A steady wash only | A calm distant roar with no single waves. |
+**Answer: Waves in a rhythm + a wash.**
+
 ## High-level plan
 1. **Mute on mobile portrait (webapp).** The top bar's speaker button is hidden on
    the game's existing mobile-portrait breakpoint and shown everywhere else. The
@@ -166,13 +197,36 @@ has the same mute switch.
      and the back button keep working.
    - Steps 2 and 3 feed the list's jingle rows; step 4 can start with pieces and
      effects.
-5. **Docs and tests.**
+5. **Sea surf.**
+   - **The design.** rail-island-music gains a `sea-surf` loop in the water
+     category. Waves roughly every 6-10 s, unevenly spaced: each rises, breaks
+     and draws back with a hiss of shingle, over a quiet steady wash. A strength
+     parameter sets the size of the waves. Its random spacing is seeded, like the
+     other water loops. It is auditioned in the catalog like every effect.
+   - **The sources.** In the game, the sea coast (dry cells next to sea cells) is
+     grouped per water tile into a source at the middle of its shore, as strong
+     as the length of shore. Lakes and rivers make no surf.
+   - **Playing it.** The director plays the nearest 1-2 coast sources in view,
+     with a voice limit of their own that takes nothing from the rapids,
+     waterfalls and springs. The loop is ambient, so it plays while paused.
+   - **The import.** The game names the design and its parameter in its sound
+     list and re-imports the sounds (`pnpm import:sounds`) as part of this
+     change.
+   - This is independent of the jingles and the catalog. Its audition in the
+     catalog depends on step 4 only for the new list (until then, the existing
+     `?sounds` page shows it).
+6. **Docs and tests.**
    - Docs: the music repo's scores, arrangement, export, sounds and site
      documents gain the jingle kind and the unified catalog. The webapp's
      top-bar and settings docs note the mobile-portrait rule.
    - Tests: the jingles' scores parse and arrange in both versions; the list
      filters by kind, group and search; the URL state round-trips, including the
      old `?sounds`; the top bar hides the button on that breakpoint.
+   - Surf: the music repo's tests and sounds document cover the `sea-surf`
+     design, with seeded, uneven waves that never schedule past the tick. The
+     game's sounds and import docs cover the coast sources, their own voice limit
+     and sea only, with tests for the coast grouping and the director's choice of
+     the nearest coast in view.
 
 ## Database and persistent storage
 Nothing new is stored in a database, R2 or browser storage. The new committed
@@ -201,6 +255,12 @@ category on each sound design (below).
 - **Effects need a category.** To group them in the list, each sound design gains
   a category (trains, ships, water, editor). This adds a field to the sounds
   contract. The game ignores it, so no format bump and no game change are needed.
+- **The surf has its own voice budget.** A coast in view is usually long, and
+  sharing the 3 water voices would let it crowd out a nearer waterfall, or be
+  crowded out by a stream. A separate 1-2 voices keeps both.
+- **The surf comes from the sea mask, not from rendering.** It is grouped from
+  `WaterState.sea` per water tile, the way rapids come from the flow features, so
+  it costs nothing per frame beyond reading the cached sources.
 - **The mute rule is CSS on the existing breakpoint**, not a new layout signal,
   so it follows every other mobile-portrait rule of the game.
 
@@ -217,6 +277,10 @@ category on each sound design (below).
   cheap, but must stop with playback and not run on the list.
 - **The `?sounds` link changes.** Anyone with the old link lands on the filtered
   list rather than the cards. That is intended, but it is a visible change.
+- **Surf everywhere on an island.** Most of an island's edge is coast, so a
+  zoomed-in camera nearly always sees some. Waves every 6-10 s at a modest level,
+  limited to 1-2 sources, should keep it a background, but the level is found by
+  listening.
 - **Hidden mute on phones.** A phone player upright has to open Settings to
   mute; the top bar has no room. Accepted.
 
@@ -226,5 +290,6 @@ category on each sound design (below).
   listening.
 - Final names for the jingles.
 - A spectrogram for pieces and jingles.
-- Any change to the existing pieces, the arranger's ensembles or the sound designs
-  themselves, beyond the effect category.
+- Any change to the existing pieces, the arranger's ensembles or the existing
+  sound designs, beyond the effect category.
+- Lapping on lake shores, and surf that follows the weather or wind.
