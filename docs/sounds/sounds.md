@@ -1,11 +1,11 @@
 # Sounds
 
-**Covers** - the game's sound effects: every horn, whistle, bell and knock Rail
-Island plays is a design here, synthesized at run time with Web Audio. This
+**Covers** - the game's sound effects: every horn, whistle, bell, water and knock
+Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters, the export the game imports, and the Sounds page that auditions them.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
-`sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/editor.ts`,
+`sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/renderSound.ts`, `src/SoundsPage.tsx`, `test/sounds.test.ts`
 **See also** - [../music/export.md](../music/export.md),
 [../site/catalog-site.md](../site/catalog-site.md); in the game,
@@ -58,6 +58,9 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `steam-chuff` | loop | `rate` 0-12 beats/s, `intensity` 0..1, `level` | the exhaust beat: looped noise through a band-pass, gated by one struck envelope per beat; every fourth beat heavier; loudness `0.3 + 0.7 * intensity` |
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
+| `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
+| `waterfall` | loop | `size` 0..1, `level` | a steady roar: low-passed noise, a deep rumble and a little spray hiss, wandering every 0.25 s; the bigger, the lower and heavier |
+| `spring-fountain` | loop | `size` 0..1, `level` | a spring, which the game draws as a fountain: the jets' hiss and the basin's splash, with a bright patter of droplets (band-passed noise clicks, 20-60 a second) |
 | `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit |
 | `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit |
 
@@ -82,6 +85,12 @@ warning bell (`zvonek vystrazniku`), measured for its partials, ring and timing:
 - **Oscillators.** Each partial is one oscillator for the whole loop. A strike
   only re-excites its envelope (`setTargetAtTime` from wherever it rings), so a
   bell costs seven sources however long it rings. `ring` scales every ring time.
+
+**The water** is three loops built the same way (`sounds/designs/water.ts`).
+Continuous filtered noise has filters and gains that wander, and the scattered
+events on top (a rapid's bubbles, a fountain's droplets) are drawn from a seeded
+random sequence (`seeded`, mulberry32). A render therefore sounds the same every
+time, and like every loop they schedule only as far ahead as they are ticked.
 
 **The calls** (`call`, `hornPattern`) are why a train sounds. Each is a pattern
 of blasts:
@@ -148,6 +157,8 @@ press.
 - the beat schedules only as far ahead as asked, at its rate; the bell strikes
   on its uneven strokes from oscillators that run for the whole loop, and stops
   when stopped;
+- the water loops bubble the same way every time, more the stronger they are,
+  and never past what they were ticked for;
 - the bell keeps the measured shape of the recording (main tone, the x1.51
   partial, the beating twin);
 - values are resolved as described;

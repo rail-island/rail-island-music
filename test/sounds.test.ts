@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SOUNDS, SOUNDS_FORMAT, resolveValues, soundById } from "../sounds/index.ts";
 import { BELL_PARTIALS, bellGap, chuffLevel, hornPattern } from "../sounds/designs/trains.ts";
+import { seeded } from "../sounds/designs/water.ts";
 import { soundsDeclarations, soundsMeta } from "../generator/sounds.ts";
 import type { SoundDesign, SoundValues } from "../sounds/types.ts";
 
@@ -69,7 +70,18 @@ describe("the designs", () => {
   it("include every sound the game plays", () => {
     // rail-island-webapp names these ids (src/render/sound/soundDesigns.ts):
     // a design the game plays is permanent.
-    for (const id of ["loco-horn", "steam-whistle", "steam-chuff", "crossing-bell", "ship-horn", "edit-build", "edit-demolish"]) {
+    for (const id of [
+      "loco-horn",
+      "steam-whistle",
+      "steam-chuff",
+      "crossing-bell",
+      "ship-horn",
+      "river-rapids",
+      "waterfall",
+      "spring-fountain",
+      "edit-build",
+      "edit-demolish",
+    ]) {
       expect(soundById(id), id).toBeDefined();
     }
   });
@@ -171,6 +183,42 @@ describe("the loops", () => {
     expect(1590 * (twin.ratio - 1)).toBeLessThan(10);
     expect(bellGap(0, 0.49, 0.085) + bellGap(1, 0.49, 0.085)).toBeCloseTo(0.98, 6);
     expect(bellGap(0, 0.49, 0.085)).toBeLessThan(bellGap(1, 0.49, 0.085));
+  });
+});
+
+describe("the water", () => {
+  /** When each event of a loop starts over `seconds`, ticked the way the game ticks it. */
+  function events(id: string, values: SoundValues, seconds: number): number[] {
+    const { ctx, dest, starts } = stubContext();
+    const d = soundById(id)!;
+    if (d.kind !== "loop") throw new Error(`${id} is a loop`);
+    const v = d.start(ctx, dest, 0, values);
+    for (let now = 0; now < seconds; now += 1 / 60) v.tick(now, 0.2);
+    return starts.filter((s) => s.what === "osc").map((s) => Number(s.at.toFixed(5)));
+  }
+
+  it("are loops, as the game plays them", () => {
+    for (const id of ["river-rapids", "waterfall", "spring-fountain"]) expect(soundById(id)!.kind, id).toBe("loop");
+  });
+
+  it("bubble a rapid the same way every time, and more the stronger it is", () => {
+    const calm = events("river-rapids", { strength: 0 }, 4);
+    expect(calm.length).toBeGreaterThan(10);
+    expect(events("river-rapids", { strength: 0 }, 4)).toEqual(calm);
+    expect(events("river-rapids", { strength: 1 }, 4).length).toBeGreaterThan(calm.length);
+  });
+
+  it("schedule nothing past what they were ticked for", () => {
+    const at = events("river-rapids", {}, 1);
+    expect(Math.max(...at)).toBeLessThan(1.2);
+  });
+
+  it("draw their random sequence from a seed", () => {
+    const a = seeded(7);
+    const b = seeded(7);
+    const xs = Array.from({ length: 5 }, a);
+    expect(Array.from({ length: 5 }, b)).toEqual(xs);
+    for (const x of xs) expect(x >= 0 && x < 1).toBe(true);
   });
 });
 

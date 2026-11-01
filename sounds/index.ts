@@ -6,13 +6,25 @@
 import { editBuild, editDemolish } from "./designs/editor.ts";
 import { shipHorn } from "./designs/ships.ts";
 import { crossingBell, locoHorn, steamChuff, steamWhistle } from "./designs/trains.ts";
+import { riverRapids, springFountain, waterfall } from "./designs/water.ts";
 import { resolve } from "./nodes.ts";
 import type { SoundDesign, SoundMeta } from "./types.ts";
 
 /** The bundle's format: bumped when the contract in types.ts changes incompatibly. */
 export const SOUNDS_FORMAT = 1;
 
-export const SOUNDS: readonly SoundDesign[] = [locoHorn, steamWhistle, steamChuff, crossingBell, shipHorn, editBuild, editDemolish];
+export const SOUNDS: readonly SoundDesign[] = [
+  locoHorn,
+  steamWhistle,
+  steamChuff,
+  crossingBell,
+  shipHorn,
+  riverRapids,
+  waterfall,
+  springFountain,
+  editBuild,
+  editDemolish,
+];
 
 export function soundById(id: string): SoundDesign | undefined {
   return SOUNDS.find((s) => s.id === id);
