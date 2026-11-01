@@ -1,14 +1,13 @@
-# Rail Island Music
+# Rail Island Sound
 
-Music for [Rail Island](https://www.railisland.com), generated from code, and the
-catalog site that plays it: [music.railisland.com](https://music.railisland.com).
+The sound effects of [Rail Island](https://www.railisland.com), synthesized from
+code, and the catalog site that plays them:
+[sound.railisland.com](https://sound.railisland.com).
 
-Public-domain classical pieces, ragtime and early jazz are written once as
-scores (ABC notation). A generator arranges each one for solo piano, a ragtime
-band, a brass band, a jazz band or chiptune, at three tempos, three lengths and
-seven keys, and exports note data plus a small WebAudio synth with CC0
-instrument samples. The site plays any arrangement and shows its score,
-following the playback.
+Every horn, whistle, engine, bell, water and woods the game plays is a design
+here, with named, ranged parameters, grouped into categories. The generator
+bundles them into one ES module the game imports; the site lists them by
+category and auditions each with sliders and a spectrogram.
 
 ```bash
 pnpm install
@@ -18,5 +17,7 @@ pnpm install
 pnpm dev
 ```
 
-Documentation: [docs/README.md](docs/README.md). Licence: MIT (code); the
-compositions are public domain, the samples CC0 (`samples/SOURCES.md`).
+Documentation: [docs/README.md](docs/README.md). Licence: MIT.
+
+The repository once also generated music (public-domain scores, a synth and
+jingles). That was removed; it is in the git history.

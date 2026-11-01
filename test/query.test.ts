@@ -1,40 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { formatTime, parseView, serializeView } from "../src/query.ts";
+import { CATEGORIES } from "../sounds/index.ts";
+import { parseView, serializeView } from "../src/query.ts";
+
+const CATS = CATEGORIES.map((c) => c.id);
 
 describe("query string", () => {
-  it("round-trips a piece's view and drops unknown parameter values", () => {
-    const v = parseView("?q=rag&kind=piece&set=ragtime&piece=maple-leaf-rag&ensemble=chiptune&key=%2B2&tempo=fast&t=12.5");
-    expect(v).toEqual({
-      q: "rag",
-      kind: "piece",
-      set: "ragtime",
-      item: { kind: "piece", id: "maple-leaf-rag" },
-      params: { ensemble: "chiptune", key: "+2" },
-      t: 12.5,
-    });
-    expect(parseView(serializeView(v))).toEqual(v);
+  it("round-trips the list's filters and the open sound", () => {
+    const v = parseView("?q=horn&cat=trains&kind=oneShot&sound=loco-horn", CATS);
+    expect(v).toEqual({ q: "horn", cat: "trains", kind: "oneShot", sound: "loco-horn" });
+    expect(parseView(serializeView(v), CATS)).toEqual(v);
   });
 
-  it("opens a jingle with its parameters, and a sound effect without parameters", () => {
-    const j = parseView("?jingle=jingle-1&tempo=lively&length=long");
-    expect(j.item).toEqual({ kind: "jingle", id: "jingle-1" });
-    expect(j.params).toEqual({ tempo: "lively", length: "long" });
-    expect(parseView(serializeView(j))).toEqual(j);
-    const s = parseView("?kind=effect&set=water&sound=waterfall&ensemble=piano");
-    expect(s.item).toEqual({ kind: "effect", id: "waterfall" });
-    expect(s.params).toEqual({});
-    expect(serializeView(s)).toBe("?kind=effect&set=water&sound=waterfall");
+  it("drops an unknown category or kind", () => {
+    expect(parseView("?cat=pianos&kind=piece", CATS)).toEqual({ q: "", cat: "", kind: "", sound: null });
   });
 
-  it("lands the old Sounds page link on the list of sound effects", () => {
-    const v = parseView("?sounds&piece=maple-leaf-rag");
-    expect(v.kind).toBe("effect");
-    expect(v.item).toBeNull();
-    expect(serializeView(v)).toBe("?kind=effect");
-  });
-
-  it("formats times", () => {
-    expect(formatTime(0)).toBe("0:00");
-    expect(formatTime(125.9)).toBe("2:05");
+  it("lands the links of the old music site on the list of sounds", () => {
+    // the sound list filtered by its old group chip
+    const s = parseView("?kind=effect&set=water&sound=waterfall", CATS);
+    expect(s).toEqual({ q: "", cat: "water", kind: "", sound: "waterfall" });
+    expect(serializeView(s)).toBe("?cat=water&sound=waterfall");
+    // a piece, a jingle and the old Sounds page open the list
+    expect(parseView("?piece=maple-leaf-rag&ensemble=piano", CATS).sound).toBeNull();
+    expect(parseView("?jingle=jingle-1", CATS).sound).toBeNull();
+    expect(parseView("?sounds", CATS)).toEqual({ q: "", cat: "", kind: "", sound: null });
   });
 });

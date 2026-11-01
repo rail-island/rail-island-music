@@ -4,11 +4,12 @@
   "license": "MIT",
   "version": "0.1.0",
   "type": "module",
-  "description": "Generated music for Rail Island, and the catalog site that plays it (music.railisland.com)",
+  "description": "The game's synthesized sound effects for Rail Island, and the catalog site that plays them (sound.railisland.com)",
   "scripts": {
-    "build:music": "tsx generator/generate.ts",
-    "dev": "pnpm build:music && vite",
-    "build": "pnpm build:music && tsc --noEmit && vite build",
+    "build:sounds": "tsx generator/sounds.ts",
+    "build:music": "pnpm build:sounds",
+    "dev": "pnpm build:sounds && vite",
+    "build": "pnpm build:sounds && tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -16,7 +17,6 @@
     "deploy": "pnpm build && wrangler deploy"
   },
   "dependencies": {
-    "abcjs": "^6.4.4",
     "solid-js": "^1.9.3"
   },
   "devDependencies": {

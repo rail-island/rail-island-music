@@ -1,6 +1,6 @@
 import { render } from "solid-js/web";
 import { App } from "./App";
-import "./music.css";
+import "./site.css";
 
 const root = document.getElementById("root")!;
 root.textContent = "";

@@ -1,10 +1,10 @@
-# Deploy the music site (rail-island-music -> https://music.railisland.com).
+# Deploy the sound site (rail-island-music -> https://sound.railisland.com).
 #
 # One environment: every push to `master` lands here. Can also be dispatched by
 # hand against any branch -- pick a `claude/*` branch in the Run workflow dialog to
-# put that branch on music.railisland.com.
+# put that branch on sound.railisland.com.
 #
-# `pnpm build` generates the music (export/), typechecks and builds the site
+# `pnpm build` exports the sounds (export/), typechecks and builds the site
 # with export/ as its publicDir; `wrangler deploy` uploads dist/ to an
 # assets-only Worker (wrangler.jsonc). No tests here: test.yml runs them in
 # parallel and is deliberately NOT a dependency -- a red run shows up as a failed
@@ -49,7 +49,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The music takes a few seconds to generate, so there is no asset cache.
       - name: Build
         run: pnpm build
 
@@ -65,4 +64,4 @@ jobs:
         env:
           BRANCH: ${{ github.ref_name }}
         run: |
-          echo "Deployed \`$BRANCH\` (${GITHUB_SHA:0:7}) to https://music.railisland.com" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployed \`$BRANCH\` (${GITHUB_SHA:0:7}) to https://sound.railisland.com" >> "$GITHUB_STEP_SUMMARY"

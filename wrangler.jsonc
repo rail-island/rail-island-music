@@ -1,9 +1,10 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // music.railisland.com: an assets-only Worker (no script, no bindings, no
+  // sound.railisland.com: an assets-only Worker (no script, no bindings, no
   // vars) that serves `pnpm build`'s output -- the catalog site plus the
-  // generated music it plays. Deployed from `master` by
-  // .github/workflows/deploy.yml. See docs/guide/deploy.md.
+  // exported sound bundle. Deployed from `master` by
+  // .github/workflows/deploy.yml. The Worker keeps the repository's name. See
+  // docs/guide/deploy.md.
   "name": "rail-island-music",
   "compatibility_date": "2026-06-16",
   "assets": {
@@ -14,6 +15,6 @@
   },
   "workers_dev": true,
   "routes": [
-    { "pattern": "music.railisland.com", "custom_domain": true }
+    { "pattern": "sound.railisland.com", "custom_domain": true }
   ]
 }

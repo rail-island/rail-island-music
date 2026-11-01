@@ -1,8 +1,8 @@
 # Setup and build
 
-**Covers** - installing, the package scripts, what a build produces, the tests and the headless render tools.
-**Code** - `package.json`, `generator/generate.ts`, `generator/renderAudio.ts`, `generator/renderNotation.ts`, `generator/renderSound.ts`, `generator/headless.ts`, `generator/prepareSamples.ts`, `vite.config.ts`, `test/`
-**See also** - [deploy.md](deploy.md), [../music/export.md](../music/export.md)
+**Covers** - installing, the package scripts, what a build produces, the tests and the headless render tool.
+**Code** - `package.json`, `generator/sounds.ts`, `generator/renderSound.ts`, `generator/headless.ts`, `vite.config.ts`, `test/`
+**See also** - [deploy.md](deploy.md), [../sounds/sounds.md](../sounds/sounds.md)
 
 ## Install
 
@@ -16,9 +16,10 @@ pnpm install
 
 | Script | Does |
 |---|---|
-| `pnpm build:music` | `generator/generate.ts`: reads `scores/`, writes `export/` ([../music/export.md](../music/export.md)) |
-| `pnpm dev` | `build:music`, then the Vite dev server with `export/` as its public folder |
-| `pnpm build` | `build:music`, `tsc --noEmit`, `vite build` into `dist/` (the site plus `export/`) |
+| `pnpm build:sounds` | `generator/sounds.ts`: writes `export/sounds/` ([../sounds/sounds.md](../sounds/sounds.md#the-export)) |
+| `pnpm build:music` | the same as `build:sounds`. Kept because the game's `pnpm import:sounds` checks for and runs it, and checks the package name `rail-island-music`; rename neither without changing the game |
+| `pnpm dev` | `build:sounds`, then the Vite dev server with `export/` as its public folder |
+| `pnpm build` | `build:sounds`, `tsc --noEmit`, `vite build` into `dist/` (the site plus `export/`) |
 | `pnpm preview` | serves `dist/` |
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm test` | Vitest, all of `test/` |
@@ -29,50 +30,21 @@ the same sources give the same files.
 
 ## Tests
 
-`pnpm test` runs in a few seconds:
+`pnpm test` runs in about a second:
 
-- `theory`, `abcParse`, `performance` - keys, spelling, chord symbols, the ABC
-  subset (lengths, accidentals, ties, tuplets, broken rhythm, repeats and
-  endings, voices and parts, the errors it raises), tempo maps and swing;
-- `arrange` - determinism, repeats and the silent opening pickup, transposition,
-  tempo and length, the generated harmony line, instruments and ranges;
-- `abcWrite` - every piece written as ABC and read back gives the same bars and
-  note onsets (three ensembles each);
-- `scores` - every piece loads, has its `SOURCES.md`, lasts 2 to 5 minutes in its
-  default arrangement and stays within the recorded samples in every ensemble
-  and in keys -3, 0 and +3; the sample set is complete;
-- `query` - the site's URL state and search.
+- `sounds` - the designs, their categories and the export
+  ([../sounds/sounds.md](../sounds/sounds.md#tests));
+- `catalogList` - the site's list: search, category and kind filters, the
+  grouping by category, the chip counts;
+- `query` - the site's URL state, and the old music site's links;
+- `audition` - what a sound's page plays, and that leaving it stops all of it.
 
-## Hearing and seeing a piece headlessly
-
-Two tools render through headless Chromium (Playwright's, pre-installed in the
-cloud sessions; it is not a dependency of this repository), after
-`pnpm build:music`:
-
-```bash
-pnpm exec tsx generator/renderAudio.ts rondo-alla-turca /tmp/turca.mp3 ensemble=chiptune --seconds=60
-```
-
-```bash
-pnpm exec tsx generator/renderNotation.ts rondo-alla-turca /tmp/turca.png --bars=16
-```
-
-`renderAudio` plays the arrangement through the real synth in an
-OfflineAudioContext and writes WAV or MP3 (ffmpeg). `renderNotation` draws the
-arranged score with abcjs, as the site does. Parameters are `name=value`; any
-not given take the piece's defaults.
-
-Both take a jingle id as well
-([../music/jingles.md](../music/jingles.md)). A third renders one of the game's sound designs, straight from `sounds/` (no
-`pnpm build:music` needed):
+## Rendering a sound headlessly
 
 ```bash
 pnpm exec tsx generator/renderSound.ts crossing-bell /tmp/bell.mp3 --seconds=6
 ```
 
-See [../sounds/sounds.md](../sounds/sounds.md#rendering-a-sound-to-a-file).
-
-## The sample set
-
-`samples/` is committed. `generator/prepareSamples.ts` rebuilds it from a
-VSCO 2 CE checkout and ffmpeg ([../music/synth.md](../music/synth.md)).
+It renders through headless Chromium (Playwright's, pre-installed in the cloud
+sessions; not a dependency of this repository). See
+[../sounds/sounds.md](../sounds/sounds.md#rendering-a-sound-to-a-file).

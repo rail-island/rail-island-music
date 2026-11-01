@@ -3,15 +3,15 @@
 // live spectrogram of what it plays, to audition and tune a design without the
 // game. It plays the design from source -- the very code the generator bundles
 // into export/sounds/sounds.js -- through one AudioContext of its own, created on
-// the first press (browsers start audio only from a gesture).
+// the first press (browsers start audio only from a gesture). Leaving the page
+// stops whatever it still plays (src/audition.ts).
 
 import { For, Show, createSignal, onCleanup } from "solid-js";
-import type { LoopVoice, SoundDesign, SoundParam, SoundValues } from "../sounds/types.ts";
-import { CATEGORY_TITLES } from "./catalogList";
+import { categoryById } from "../sounds/index.ts";
+import type { SoundDesign, SoundParam, SoundValues } from "../sounds/types.ts";
+import { type Audition, createAudition } from "./audition";
+import { KIND_TITLES } from "./catalogList";
 
-/** How far ahead (s) a running loop schedules, and how often it is ticked (ms). */
-const HORIZON = 0.2;
-const TICK_MS = 50;
 /** The spectrogram's frequency ceiling (Hz): every sound here lives below it. */
 const SPECTRUM_TOP = 8000;
 
@@ -82,35 +82,35 @@ export function EffectPage(props: { design: SoundDesign }) {
   const [running, setRunning] = createSignal(false);
   // Until when the spectrogram draws: a loop while it runs, a one-shot until it ends.
   const [drawUntil, setDrawUntil] = createSignal(0);
-  let voice: LoopVoice | null = null;
-  let timer: ReturnType<typeof setInterval> | undefined;
+  let audition: Audition | null = null;
   let startDrawing: () => void = () => {};
 
   const active = () => !!audio && (running() || audio.ctx.currentTime < drawUntil());
 
   const set = (name: string, v: number | string) => {
     setValues({ ...values(), [name]: v });
-    voice?.set(values());
+    audition?.set(values());
   };
 
   const stopLoop = () => {
-    clearInterval(timer);
-    timer = undefined;
-    if (voice && audio) {
-      voice.stop(audio.ctx.currentTime);
-      setDrawUntil(audio.ctx.currentTime + 0.3);
-    }
-    voice = null;
+    if (!audition || !audio) return;
+    audition.stopLoop();
+    setDrawUntil(audio.ctx.currentTime + 0.3);
     setRunning(false);
   };
-  onCleanup(stopLoop);
+  // Leaving the page silences it: the loop and every one-shot still ringing.
+  onCleanup(() => {
+    audition?.stopAll();
+    setRunning(false);
+  });
 
   const press = () => {
     const d = props.design;
     const { ctx, out } = output();
+    audition ??= createAudition(ctx, out);
     if (d.kind === "oneShot") {
-      const v = d.play(ctx, out, ctx.currentTime + 0.02, values());
-      setDrawUntil(v.endsAt + 0.2);
+      const v = audition.playOnce(d, values());
+      setDrawUntil(Math.max(drawUntil(), v.endsAt + 0.2));
       startDrawing();
       return;
     }
@@ -118,26 +118,23 @@ export function EffectPage(props: { design: SoundDesign }) {
       stopLoop();
       return;
     }
-    const v = d.start(ctx, out, ctx.currentTime + 0.02, values());
-    voice = v;
-    v.tick(ctx.currentTime, HORIZON);
-    timer = setInterval(() => v.tick(ctx.currentTime, HORIZON), TICK_MS);
+    audition.startLoop(d, values());
     setRunning(true);
     startDrawing();
   };
 
   return (
-    <section class="music-sound">
-      <p class="music-facts">
-        <span>{CATEGORY_TITLES[props.design.category]}</span>
-        <span>{props.design.kind === "loop" ? "Loop" : "One-shot"}</span>
-        <code class="music-sound__id">{props.design.id}</code>
+    <section class="sound-sound">
+      <p class="sound-facts">
+        <span>{categoryById(props.design.category)?.title ?? props.design.category}</span>
+        <span>{KIND_TITLES[props.design.kind]}</span>
+        <code class="sound-id">{props.design.id}</code>
       </p>
-      <p class="music-muted">{props.design.description}</p>
-      <div class="music-params">
+      <p class="sound-muted">{props.design.description}</p>
+      <div class="sound-params">
         <For each={props.design.params}>
           {(p) => (
-            <label class="music-param">
+            <label class="sound-param">
               <span>
                 {p.title}: {formatValue(p, values()[p.name]!)}
               </span>
@@ -164,21 +161,21 @@ export function EffectPage(props: { design: SoundDesign }) {
           )}
         </For>
       </div>
-      <div class="music-controls">
-        <button class="music-btn music-btn--play" onClick={press}>
+      <div class="sound-controls">
+        <button class="sound-btn sound-btn--play" onClick={press}>
           {props.design.kind === "oneShot" ? "▶ Play" : running() ? "■ Stop" : "▶ Start"}
         </button>
         <button
-          class="music-btn"
+          class="sound-btn"
           onClick={() => {
             setValues(defaults(props.design.params));
-            voice?.set(values());
+            audition?.set(values());
           }}
         >
           Defaults
         </button>
       </div>
-      <figure class="music-spectrum">
+      <figure class="sound-spectrum">
         <canvas
           width="720"
           height="200"
@@ -187,7 +184,7 @@ export function EffectPage(props: { design: SoundDesign }) {
             startDrawing = spectrogram(el, active);
           }}
         />
-        <figcaption class="music-muted">Spectrogram, 0-8 kHz: time runs left to right, louder is brighter.</figcaption>
+        <figcaption class="sound-muted">Spectrogram, 0-8 kHz: time runs left to right, louder is brighter.</figcaption>
       </figure>
     </section>
   );

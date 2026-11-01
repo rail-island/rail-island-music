@@ -1,6 +1,5 @@
-/* The music site. Its palette is the factory site's (dark M3 surfaces), copied
-   rather than imported -- the two evolve independently. The score is drawn on
-   a light sheet so abcjs's black notation reads as print. */
+/* The sound site. Its palette is the factory site's (dark M3 surfaces), copied
+   rather than imported -- the two evolve independently. */
 
 :root {
   color-scheme: dark;
@@ -13,7 +12,6 @@
   --m-primary: #8fb6f2;
   --m-error: #e38a87;
   --m-state-hover: rgba(255, 255, 255, 0.08);
-  --m-highlight: #d9480f;
   --m-radius-sm: 8px;
   --m-radius-md: 12px;
 }
@@ -36,15 +34,15 @@ a {
   color: var(--m-primary);
 }
 
-.music-muted {
+.sound-muted {
   color: var(--m-on-surface-variant);
 }
 
-.music-error {
+.sound-error {
   color: var(--m-error);
 }
 
-.music-bar {
+.sound-bar {
   position: sticky;
   top: 0;
   z-index: 5;
@@ -57,12 +55,12 @@ a {
   border-bottom: 1px solid var(--m-outline);
 }
 
-.music-bar__logo img {
+.sound-bar__logo img {
   display: block;
   border-radius: 8px;
 }
 
-.music-bar__title {
+.sound-bar__title {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
@@ -72,23 +70,23 @@ a {
   min-width: 0;
 }
 
-.music-bar__sub {
+.sound-bar__sub {
   font-size: 0.85rem;
   font-weight: 400;
   color: var(--m-on-surface-variant);
 }
 
-.music-main {
+.sound-main {
   max-width: 1080px;
   margin: 0 auto;
   padding: 16px 16px 96px;
 }
 
-.music-intro {
+.sound-intro {
   margin-top: 0;
 }
 
-.music-btn {
+.sound-btn {
   min-height: 44px;
   min-width: 44px;
   padding: 0 14px;
@@ -100,16 +98,16 @@ a {
   cursor: pointer;
 }
 
-.music-btn:hover:not(:disabled) {
+.sound-btn:hover:not(:disabled) {
   background: var(--m-state-hover);
 }
 
-.music-btn:disabled {
+.sound-btn:disabled {
   opacity: 0.5;
   cursor: default;
 }
 
-.music-btn--play {
+.sound-btn--play {
   background: var(--m-primary);
   color: #0b1620;
   border-color: transparent;
@@ -117,17 +115,12 @@ a {
   min-width: 120px;
 }
 
-.music-btn--play:hover:not(:disabled) {
+.sound-btn--play:hover:not(:disabled) {
   background: #a9c7f5;
 }
 
-.music-btn--round {
-  border-radius: 50%;
-  padding: 0;
-  width: 44px;
-}
 
-.music-filters {
+.sound-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -135,7 +128,7 @@ a {
   margin-bottom: 12px;
 }
 
-.music-search {
+.sound-search {
   flex: 1 1 240px;
   min-height: 44px;
   padding: 0 12px;
@@ -146,13 +139,13 @@ a {
   font: inherit;
 }
 
-.music-chips {
+.sound-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.music-chip {
+.sound-chip {
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--m-outline);
@@ -163,17 +156,17 @@ a {
   cursor: pointer;
 }
 
-.music-chip.is-on {
+.sound-chip.is-on {
   background: var(--m-surface-2);
   border-color: var(--m-primary);
 }
 
-.music-table {
+.sound-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.music-table th {
+.sound-table th {
   text-align: left;
   font-weight: 500;
   color: var(--m-on-surface-variant);
@@ -181,31 +174,31 @@ a {
   padding: 8px;
 }
 
-.music-table td {
+.sound-table td {
   padding: 10px 8px;
   border-bottom: 1px solid var(--m-outline);
 }
 
-.music-row {
+.sound-row {
   cursor: pointer;
 }
 
-.music-row:hover {
+.sound-row:hover {
   background: var(--m-state-hover);
 }
 
-.music-row a {
+.sound-row a {
   color: var(--m-on-surface);
   text-decoration: none;
   font-weight: 500;
 }
 
-.music-col-num {
+.sound-col-num {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-.music-facts {
+.sound-facts {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 16px;
@@ -213,14 +206,14 @@ a {
   color: var(--m-on-surface-variant);
 }
 
-.music-params {
+.sound-params {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.music-param {
+.sound-param {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -228,7 +221,7 @@ a {
   color: var(--m-on-surface-variant);
 }
 
-.music-param select {
+.sound-param select {
   min-height: 44px;
   padding: 0 8px;
   border: 1px solid var(--m-outline);
@@ -238,7 +231,7 @@ a {
   font: inherit;
 }
 
-.music-controls {
+.sound-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -246,84 +239,17 @@ a {
   margin-bottom: 16px;
 }
 
-.music-progress {
-  flex: 1 1 200px;
-  accent-color: var(--m-primary);
-}
 
-.music-time,
-.music-mini__time {
-  font-variant-numeric: tabular-nums;
-  color: var(--m-on-surface-variant);
-}
 
-.music-volume {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 
-.music-volume input {
-  width: 90px;
-  accent-color: var(--m-primary);
-}
 
-.music-score {
-  background: #fbfaf6;
-  color: #111;
-  border-radius: var(--m-radius-md);
-  padding: 12px;
-  overflow-x: auto;
-  cursor: pointer;
-}
 
-.music-score svg .is-current,
-.music-score svg .is-current path {
-  fill: var(--m-highlight);
-  stroke: var(--m-highlight);
-}
 
-.music-pd {
-  font-size: 0.85rem;
-}
 
-.music-mini {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: var(--m-surface-1);
-  border-top: 1px solid var(--m-outline);
-}
 
-.music-mini__title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-  background: none;
-  border: none;
-  color: var(--m-on-surface);
-  font: inherit;
-  cursor: pointer;
-}
 
-.music-mini__progress {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 2px;
-  background: var(--m-primary);
-}
 
-.music-footer {
+.sound-footer {
   max-width: 1080px;
   margin: 0 auto;
   padding: 16px 16px 96px;
@@ -332,21 +258,18 @@ a {
 }
 
 @media (max-width: 640px) {
-  .music-col-by {
+  .sound-col-desc {
     display: none;
   }
 }
 
 /* --- A sound effect's detail (src/EffectPage.tsx) ------------------------- */
-.music-chips--sub {
-  margin-top: -4px;
-}
 
-.music-spectrum {
+.sound-spectrum {
   margin: 0;
 }
 
-.music-spectrum canvas {
+.sound-spectrum canvas {
   display: block;
   width: 100%;
   max-width: 720px;
@@ -357,17 +280,53 @@ a {
   border-radius: var(--m-radius-sm);
 }
 
-.music-spectrum figcaption {
+.sound-spectrum figcaption {
   margin-top: 6px;
   font-size: 0.85rem;
 }
 
-.music-sound__id {
+.sound-id {
   color: var(--m-on-surface-variant);
   font-size: 0.85rem;
 }
 
-.music-param input[type="range"] {
+.sound-param input[type="range"] {
   min-height: 32px;
   accent-color: var(--m-primary);
+}
+
+/* --- The list, grouped by category (src/App.tsx) -------------------------- */
+.sound-chip__count {
+  margin-left: 6px;
+  color: var(--m-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+.sound-group {
+  margin: 20px 0 4px;
+}
+
+.sound-group h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.sound-group p {
+  margin: 2px 0 6px;
+  font-size: 0.85rem;
+}
+
+/* The same columns in every group, so the tables line up. */
+.sound-group .sound-table {
+  table-layout: fixed;
+}
+
+.sound-group .sound-table th:nth-child(1) {
+  width: 30%;
+}
+
+.sound-group .sound-table th:nth-child(2) {
+  width: 110px;
+  white-space: nowrap;
 }

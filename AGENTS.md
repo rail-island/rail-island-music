@@ -1,17 +1,12 @@
 # Agent Instructions
 
-**Rail Island Music** generates music for Rail Island and hosts its catalog at
-`music.railisland.com`. Public-domain pieces are written once as ABC scores;
-the generator arranges them (ensemble, tempo, length, key), exports note data,
-the arranged score and a WebAudio synth with its samples. The game
-(`rail-island-webapp`) does not import the music yet: whether it will is decided
-after listening (docs/specs/2026-10-30-music-generator-catalog.md).
-
-This repository is also the **source of the game's sound effects**
-(docs/sounds/sounds.md): every horn, whistle, bell and knock is a synthesized
-design in `sounds/`, exported as `export/sounds/sounds.js` and mirrored into the
-game by its `pnpm import:sounds`, the way rail-island-factory's models are. A
-sound is changed here and re-imported there, never edited in the game.
+**Rail Island Sound** holds the sound effects of Rail Island and hosts their
+catalog at `sound.railisland.com`. Every sound is a design in `sounds/`,
+synthesized at run time with Web Audio and grouped into categories; the
+generator bundles them into `export/sounds/`, which the game
+(`rail-island-webapp`) imports with its `pnpm import:sounds`
+(docs/sounds/sounds.md). The repository once also generated music; that was
+removed and lives only in the git history.
 
 ## Documentation (`docs/`)
 
@@ -28,12 +23,11 @@ document that owns it in the same change.** Conventions:
 
 ## Stack
 
-- **TypeScript (strict)**. `lib/` (parser, arranger, ABC writer) is isomorphic:
-  the generator and the site run the same code. `synth/` is browser-only.
-  `sounds/` is the game's sound designs, browser-only like `synth/` (Web Audio
-  nodes, no DOM), and `sounds/types.ts` is types only: it is written out as the
-  bundle's `.d.ts`. `generator/` is Node-only, run with `tsx`.
-- The site is **Solid** (`solid-js`) + **Vite**, abcjs for the score. Do not use
+- **TypeScript (strict)**. `sounds/` is the game's sound designs (Web Audio
+  nodes, no DOM): the generator bundles them and the site plays them from
+  source. `sounds/types.ts` is types only: it is written out as the bundle's
+  `.d.ts`. `generator/` is Node-only, run with `tsx`.
+- The site is **Solid** (`solid-js`) + **Vite**. Do not use
   React APIs; use signals, `createEffect`/`onMount`/`onCleanup`,
   `<Show>`/`<For>`, do not destructure props, `class` not `className`.
 - Tests are **Vitest** under `test/`. Package manager is **pnpm**.
@@ -42,24 +36,17 @@ document that owns it in the same change.** Conventions:
 
 ## Rules
 
-- **`lib/` and `src/` never import `generator/`** or anything `node:`.
-- **Piece ids are permanent once published** - the game may store them.
+- **`sounds/` and `src/` never import `generator/`** or anything `node:`.
+- **The package name `rail-island-music` and the `build:music` script stay**:
+  the game's import checks both.
 - **Sound ids are permanent once the game plays them**, and so are their
   parameter names: the game names both in code. Adding a parameter is fine
   (with a default); renaming or removing one is a change in the game too.
 - **Output stays deterministic**: no timestamps, no randomness, no unordered
   iteration in what is written.
-- **Jingles are the user's own recordings** (docs/music/jingles.md), in
-  `jingles/<id>/` with the recording and `SOURCES.md`; the public-domain rule
-  is for the pieces in `scores/`. They are written for the site only
-  (`export/site/`) until the game uses them.
-- **Public domain only** (docs/music/scores.md): a composition must be PD in
-  the EU and the US; transcriptions are our own. Never use an arrangement or a
-  recording.
-- **Sources are stored in git.** Every reference a score is made from lives in
-  `scores/<id>/` and is listed in its `SOURCES.md`; samples are listed in
-  `samples/SOURCES.md`. Do not transcribe a piece from memory and present it as
-  checked: say in `SOURCES.md` what it was made from.
+- **Every design has a category** of `CATEGORIES` (`sounds/index.ts`), and
+  `SOUNDS` keeps each category's designs together, in category order.
+- **No music.** Do not bring back scores, samples or a music synth unless asked.
 - **`export/` and `dist/` are generated and gitignored.** Never commit them.
 - Every bug fix ships with a regression test in the suite that owns the behaviour.
 - Use ASCII in code and comments; no emoji.
@@ -77,12 +64,10 @@ well under a minute.
 **Headless verification only**: do not drive a real browser unless the task is
 about browser tooling and the user agreed first.
 
-## Let the user hear and see the music
+## Let the user hear the sound
 
-Whenever you add or change a piece, an ensemble, a groove or the synth, **send
-the user the result in the chat** before you finish: an MP3 from
-`generator/renderAudio.ts` (a minute or so is enough) and the first bars of the
-score from `generator/renderNotation.ts` (docs/guide/setup-and-build.md). Write
-them to your scratchpad, never into the repository, send them with the chat's
-file-sending tool, caption each with the piece id and parameters, and say what
-you would improve next.
+Whenever you add or change a sound design, **send the user the result in the
+chat** before you finish: an MP3 from `generator/renderSound.ts`
+(docs/sounds/sounds.md). Write it to your scratchpad, never into the
+repository, send it with the chat's file-sending tool, caption it with the
+sound id and parameters, and say what you would improve next.

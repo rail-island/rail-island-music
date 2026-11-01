@@ -50,6 +50,13 @@ export interface LoopVoice extends Voice {
 /** What a sound belongs to, for grouping it in the catalog; the game ignores it. */
 export type SoundCategory = "trains" | "ships" | "water" | "nature" | "bells" | "editor";
 
+/** A category as the catalog shows it: a heading and a line on what it holds. */
+export interface SoundCategoryInfo {
+  id: SoundCategory;
+  title: string;
+  description: string;
+}
+
 interface DesignBase {
   /** Permanent once the game plays it: the game names designs by id. */
   id: string;
@@ -89,5 +96,7 @@ export interface SoundsMetaFile {
   note: string;
   format: number;
   module: string;
+  /** Every category, in the order the site lists them. */
+  categories: SoundCategoryInfo[];
   sounds: SoundMeta[];
 }

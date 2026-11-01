@@ -1,8 +1,8 @@
-# The catalog site (music.railisland.com)
+# The catalog site (sound.railisland.com)
 
-**Covers** - the Solid site that lists and plays everything Rail Island plays: the one filterable list of pieces, jingles and sound effects; the score page of a piece or a jingle; the sound effect page with its spectrogram; the mini player; the URL state; and the one stored setting.
-**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/catalogList.ts`, `src/ScorePage.tsx`, `src/EffectPage.tsx`, `src/ScoreView.tsx`, `src/MiniPlayer.tsx`, `src/music.ts`, `src/query.ts`, `src/music.css`, `src/favicon.svg`, `test/query.test.ts`, `test/catalogList.test.ts`
-**See also** - [../music/export.md](../music/export.md), [../music/jingles.md](../music/jingles.md), [../sounds/sounds.md](../sounds/sounds.md), [../music/synth.md](../music/synth.md), [../guide/deploy.md](../guide/deploy.md)
+**Covers** - the Solid site that lists and plays every sound Rail Island plays: the list grouped by category with its search, category and kind filters; a sound's page with its spectrogram; stopping what a page plays when it is left; the URL state.
+**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/catalogList.ts`, `src/EffectPage.tsx`, `src/audition.ts`, `src/query.ts`, `src/site.css`, `src/favicon.svg`, `test/query.test.ts`, `test/catalogList.test.ts`, `test/audition.test.ts`
+**See also** - [../sounds/sounds.md](../sounds/sounds.md), [../guide/deploy.md](../guide/deploy.md)
 
 The site follows the factory's catalog in look (the same dark palette, app bar
 and table), in shape (one filterable list, a detail per item) and in stack
@@ -10,50 +10,30 @@ and table), in shape (one filterable list, a detail per item) and in stack
 
 ## Data
 
-- **Pieces** - `App.tsx` fetches `/catalog.json` once; a missing catalog says to
-  run `pnpm build:music`. A piece's page fetches `/scores/<id>.abc` and arranges
-  it in the browser with `lib/`, the generator's own code, for the chosen
-  parameters, then writes the arranged ABC.
-- **Jingles** - fetched from `/site/jingles.json`, the build's site-only copy
-  ([../music/jingles.md](../music/jingles.md)). A jingle's page fetches
-  `/site/jingles/<id>/score.abc`. If the file is missing, the site simply
-  shows no jingles.
-- **Sound effects** - the designs themselves (`sounds/`), bundled into the site
-  from source, so the page plays the very code the game imports.
-- **Samples** load from `/samples/` the first time something plays.
+The designs themselves (`sounds/`), bundled into the site from source, so a
+page plays the very code the game imports. Nothing is fetched. The build also
+copies `export/sounds/` into `dist/`, so the deployed site serves the bundle the
+game imports.
 
 ## The list
 
-One table of every piece, jingle and sound effect (`src/catalogList.ts`
-`buildRows`). Every item is a row of the same shape: a kind and a group.
-- **Search box** - every word must match the title, composer, kind, group, or
-  extras (year, key, a jingle's source, an effect's id and description).
-- **Kind chips** - All, Pieces, Jingles, Sound effects.
-- **Group chips** - for the chosen kind, when it has more than one group: the
-  piece sets; the effect categories Trains, Ships, Water, Editor (`groupsOf`).
-- **Columns** - title, by (composer; for an effect, One-shot or Loop; hidden
-  on a phone), kind, group, and the default arrangement's length (`-` for an
-  effect).
+Every sound design, under a heading per category (`src/catalogList.ts`):
+- **Search box** - every word must match the title, id, description, category
+  or kind (`filterSounds`).
+- **Kind chips** - All, One-shots, Loops.
+- **Category chips** - All and each category of `CATEGORIES`
+  ([../sounds/sounds.md](../sounds/sounds.md#categories)), each with the number
+  of sounds it holds (`countByCategory`) and its description as a tooltip. A
+  second click on the chosen chip clears it.
+- **Groups** - the matching sounds under their category's title and
+  description, in category order; a category with no match is left out
+  (`groupByCategory`). Each group is a table: title, kind, and what it is (the
+  description, hidden on a phone).
 
-A row opens the item's page, and the app bar's back arrow returns to the list
+A row opens the sound's page, and the app bar's back arrow returns to the list
 with its filters.
 
-## A piece or a jingle (`ScorePage`)
-
-- the facts: composer, year, group, key and meter;
-- a picker for each parameter, defaults marked: a piece's four (ensemble, tempo,
-  length, key), a jingle's three (ensemble, tempo, key). A change
-  re-arranges, and while it plays it carries on in the new arrangement at the
-  same point;
-- Play/Pause, Stop, a progress slider (seeks), the time, and a volume slider;
-- the arranged score, drawn by abcjs on a light sheet. Bars are numbered in
-  reading order from the first voice's line and measure classes, so the bar
-  under the playback is highlighted in every voice and scrolled into view, and
-  a click on a note or rest of a bar seeks there;
-- a closing line: why a piece is public domain, or what a jingle was
-  transcribed from.
-
-## A sound effect (`EffectPage`)
+## A sound's page (`EffectPage`)
 
 - **Facts** - its category, one-shot or loop, its id and its description.
 - **Controls** - a slider for each number parameter and a picker for each
@@ -65,27 +45,20 @@ with its filters.
     while something sounds (a loop while it runs, a one-shot until it ends).
   - The last picture stays.
 
-The old Sounds page (`?sounds`) is gone. Its link lands on the list filtered to
-sound effects.
+**Leaving stops it.** What the page plays is held by an audition
+(`src/audition.ts`): the running loop, ticked every 50 ms 0.2 s ahead, and every
+one-shot still ringing. When the page is left - the back arrow, the browser's
+Back, another sound opened from the URL - the page is unmounted (the detail is
+a keyed `<Show>`, so another sound is another page) and `stopAll` fades out the
+loop and every one-shot. A tolling bell or a horn's call no longer rings on
+over the list.
 
-## The mini player
-
-While a piece or a jingle plays and another page is shown, a bar at the bottom
-keeps its title, Play/Pause and progress; its title opens it again. There is one
-player for the whole site (`src/music.ts`).
-
-## URL state and storage
+## URL state
 
 Everything is in the query string (`src/query.ts`):
-- the list: `q`, `kind` (`piece`, `jingle`, `effect`) and `set` (the group
-  chip);
-- the open item: `piece=<id>`, `jingle=<id>` or `sound=<id>`;
-- a piece's or a jingle's parameter names, with unknown values dropped;
-- `t`, the position in seconds, written when playback pauses;
-- `?sounds` parses as `kind=effect`.
+- the list: `q`, `cat` (a category id) and `kind` (`oneShot`, `loop`);
+- the open sound: `sound=<id>`.
 
-Back walks all of it.
-
-The only stored setting is the player volume: one localStorage key,
-`rail-island-music.volume`, a number from 0 to 1, read on load and written on
-change; a missing, broken or blocked value falls back to 0.8.
+Unknown values are dropped. Links from the time the site also held music land on
+the list: `set=<category>` is read as `cat`, while `kind=effect`, `?sounds`, a
+`piece` or a `jingle` are ignored. Back walks all of it. Nothing is stored.

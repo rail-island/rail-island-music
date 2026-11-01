@@ -5,7 +5,7 @@
 
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { SOUNDS, SOUNDS_FORMAT, resolveValues, soundById } from "../sounds/index.ts";
+import { CATEGORIES, SOUNDS, SOUNDS_FORMAT, resolveValues, soundById, soundsIn } from "../sounds/index.ts";
 import { BELL_PARTIALS, bellGap, chuffLevel, hornPattern } from "../sounds/designs/trains.ts";
 import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
@@ -391,6 +391,18 @@ describe("the export", () => {
     expect(meta.sounds.map((s) => s.id)).toEqual(SOUNDS.map((s) => s.id));
     expect(JSON.stringify(meta)).toBe(JSON.stringify(soundsMeta()));
     for (const s of meta.sounds) expect(Object.keys(s)).toEqual(["id", "title", "category", "description", "kind", "params"]);
+    expect(meta.categories.map((c) => c.id)).toEqual(CATEGORIES.map((c) => c.id));
+  });
+
+  it("puts every design in a known category, each category's designs together and in category order", () => {
+    const ids = CATEGORIES.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const c of CATEGORIES) {
+      expect(c.title).not.toBe("");
+      expect(c.description).not.toBe("");
+      expect(soundsIn(c.id).length).toBeGreaterThan(0);
+    }
+    expect(SOUNDS.map((s) => s.id)).toEqual(CATEGORIES.flatMap((c) => soundsIn(c.id).map((s) => s.id)));
   });
 
   it("declares the bundle from a contract that is types only", () => {
@@ -403,5 +415,6 @@ describe("the export", () => {
     expect(dts).toContain("export interface OneShotDesign");
     expect(dts).toContain("export declare const SOUNDS: readonly SoundDesign[];");
     expect(dts).toContain("export declare function resolveValues(");
+    expect(dts).toContain("export declare const CATEGORIES: readonly SoundCategoryInfo[];");
   });
 });

@@ -8,8 +8,8 @@ parameters and categories, the export the game imports, and auditioning them on 
 `sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
 `sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`
-**See also** - [../music/export.md](../music/export.md),
-[../site/catalog-site.md](../site/catalog-site.md); in the game,
+**See also** - [../site/catalog-site.md](../site/catalog-site.md),
+[../guide/setup-and-build.md](../guide/setup-and-build.md); in the game,
 `rail-island-webapp` `docs/gameplay/sounds.md` (when each sound plays) and
 `docs/tooling/sound-import.md` (`pnpm import:sounds`)
 
@@ -27,7 +27,7 @@ re-imported in the game, never edited there. The split:
 
 A design is a `OneShotDesign` or a `LoopDesign`:
 - **Identity** - an `id` (kebab-case, **permanent once the game plays it**), a
-  `title`, a one-line `description`.
+  `title`, a `category` ([Categories](#categories)), a one-line `description`.
 - **Parameters** - `params`: `number` parameters (`min`, `max`, `step`,
   `default`, optional `unit`) and `choice` parameters (`values`, `default`).
   Every design has a `level` (0..1).
@@ -137,23 +137,26 @@ of blasts:
 | `player` | 0.6 s | 0.8 s |
 
 To add a design, write it in `sounds/designs/` with `oneShot` or `loop`
-(`sounds/nodes.ts`) and list it in `SOUNDS` (`sounds/index.ts`). It appears on
-the site's catalog at once. The game plays it once its code names the id.
+(`sounds/nodes.ts`), give it a `category`, and list it in `SOUNDS`
+(`sounds/index.ts`) among its category's designs. It appears on the site's
+catalog at once. The game plays it once its code names the id.
 
 ## The export
 
-`pnpm build:music` (`generator/sounds.ts`) writes `export/sounds/`:
+`pnpm build:sounds` (`generator/sounds.ts`; `pnpm build:music` is the same
+script, kept for the game's import) writes `export/sounds/`:
 
 | File | What |
 |---|---|
-| `sounds.js` | every design as ONE ES module (esbuild): `SOUNDS`, `SOUNDS_FORMAT`, `soundById`, `soundMeta`, `resolveValues` |
-| `sounds.meta.json` | `{ note, format, module, sounds }`: every design's `id`, `title`, `description`, `kind` and `params`, without code |
+| `sounds.js` | every design as ONE ES module (esbuild): `SOUNDS`, `SOUNDS_FORMAT`, `CATEGORIES`, `soundById`, `categoryById`, `soundsIn`, `soundMeta`, `resolveValues` |
+| `sounds.meta.json` | `{ note, format, module, categories, sounds }`: every category, and every design's `id`, `title`, `category`, `description`, `kind` and `params`, without code |
 | `sounds.d.ts` | `sounds/types.ts` followed by the module's exports |
 
 `SOUNDS_FORMAT` (1) is bumped when the contract changes incompatibly. The game's
 import refuses a format it does not know. The game runs
 `pnpm import:sounds`, which builds this repository and mirrors `export/sounds/`
-into its committed `db/sounds/`.
+into its committed `db/sounds/`. That import checks for a `rail-island-music`
+package with a `build:music` script, so both names stay.
 
 ## Rendering a sound to a file
 
@@ -171,17 +174,32 @@ someone a sound.
 
 ## Categories
 
-Every design has a `category`: `trains` (horn, whistle, exhaust beat, diesel
-engine, crossing bell), `ships` (ship horn), `water` (rapids, waterfall, spring
-fountain, sea surf), `nature` (woods), `bells` (church bell, Big Ben,
-Notre-Dame bourdon) or `editor` (build, demolish). The site's list groups the effects by it.
-It is part of `sounds.meta.json` and the contract, as an additive field the game
-ignores, so it needs no format bump.
+Every design has a `category`, and `CATEGORIES` (`sounds/index.ts`) lists them
+in order, each with a `title` and a one-line `description`:
+
+| Category | What it holds | Designs |
+|---|---|---|
+| `trains` | locomotives and the railway | horn, whistle, exhaust beat, diesel engine, crossing bell |
+| `ships` | vessels in port and at sea | ship horn |
+| `water` | ambient water, played while in view | rapids, waterfall, spring fountain, sea surf |
+| `nature` | ambient life of the land | woods |
+| `bells` | tower bells tolling | church bell, Big Ben, Notre-Dame bourdon |
+| `editor` | feedback of the map editor | build, demolish |
+
+`SOUNDS` keeps each category's designs together, in the order of `CATEGORIES`
+(tested), so the list reads the same grouped or not. `categoryById` and
+`soundsIn(category)` look them up. The site's list groups the sounds under their
+category and filters by it ([../site/catalog-site.md](../site/catalog-site.md)).
+
+The categories are in `sounds.meta.json` (`categories`, and each design's
+`category`) and in the contract (`SoundCategory`, `SoundCategoryInfo`). They are
+additive fields the game ignores, so they need no format bump. A new category is
+a new `SoundCategory` member and a row of `CATEGORIES`.
 
 ## Auditioning on the site
 
-The sound effects are rows of the site's one list (filter it to Sound effects).
-Each opens on a page of its own (`src/EffectPage.tsx`,
+The sounds are the site's list, grouped by category. Each opens on a page of
+its own (`src/EffectPage.tsx`,
 [../site/catalog-site.md](../site/catalog-site.md)):
 - the design's category, kind, id and description;
 - a slider for every number parameter and a picker for every choice;
@@ -193,7 +211,7 @@ Each opens on a page of its own (`src/EffectPage.tsx`,
 A running loop takes a parameter change at once, so a beat's rate can be swept
 while it plays. The page plays the design **from source**, the same code the
 generator bundles, through one `AudioContext` of its own created on the first
-press. The old `?sounds` page is gone and its link lands on the filtered list.
+press. Leaving the page stops everything it still plays, one-shots included.
 
 ## Tests
 
@@ -216,4 +234,6 @@ press. The old `?sounds` page is gone and its link lands on the filtered list.
   rung out;
 - values are resolved as described;
 - the call patterns hold;
-- the export lists every design and `types.ts` stays types only.
+- every design is in a known category, each category's designs together and in
+  category order;
+- the export lists every category and design, and `types.ts` stays types only.
