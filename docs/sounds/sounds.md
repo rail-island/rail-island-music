@@ -3,10 +3,10 @@
 **Covers** - the game's sound effects: every horn, whistle, bell, water and knock
 Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
-parameters, the export the game imports, and the Sounds page that auditions them.
+parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
 `sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/editor.ts`,
-`generator/sounds.ts`, `generator/renderSound.ts`, `src/SoundsPage.tsx`, `test/sounds.test.ts`
+`generator/sounds.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`
 **See also** - [../music/export.md](../music/export.md),
 [../site/catalog-site.md](../site/catalog-site.md); in the game,
 `rail-island-webapp` `docs/gameplay/sounds.md` (when each sound plays) and
@@ -60,6 +60,7 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
 | `waterfall` | loop | `size` 0..1, `level` | a steady roar: low-passed noise, a deep rumble and a little spray hiss, wandering every 0.25 s; the bigger, the lower and heavier |
+| `sea-surf` | loop | `strength` 0..1, `level` | the sea on a shore: a quiet wash under waves every 6-10 s (seeded, uneven), each a rush whose low-pass opens as it rises, a bright break at the crest and a hiss of shingle as it draws back |
 | `spring-fountain` | loop | `size` 0..1, `level` | a spring, which the game draws as a fountain: the jets' hiss and the basin's splash, with a bright patter of droplets (band-passed noise clicks, 20-60 a second) |
 | `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit |
 | `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit |
@@ -104,7 +105,7 @@ of blasts:
 
 To add a design, write it in `sounds/designs/` with `oneShot` or `loop`
 (`sounds/nodes.ts`) and list it in `SOUNDS` (`sounds/index.ts`). It appears on
-the Sounds page at once. The game plays it once its code names the id.
+the site's catalog at once. The game plays it once its code names the id.
 
 ## The export
 
@@ -135,19 +136,30 @@ sessions). Parameters are `name=value`: a number is parsed as one, anything else
 is a choice. Use it to compare a design with a reference recording, or to send
 someone a sound.
 
-## The Sounds page (`?sounds`)
+## Categories
 
-`src/SoundsPage.tsx`: one card per design, in `SOUNDS` order. Each card has:
-- the design's title, id and description;
+Every design has a `category`: `trains` (horn, whistle, exhaust beat, crossing
+bell), `ships` (ship horn), `water` (rapids, waterfall, spring fountain, sea
+surf) or `editor` (build, demolish). The site's list groups the effects by it.
+It is part of `sounds.meta.json` and the contract, as an additive field the game
+ignores, so it needs no format bump.
+
+## Auditioning on the site
+
+The sound effects are rows of the site's one list (filter it to Sound effects).
+Each opens on a page of its own (`src/EffectPage.tsx`,
+[../site/catalog-site.md](../site/catalog-site.md)):
+- the design's category, kind, id and description;
 - a slider for every number parameter and a picker for every choice;
 - Play for a one-shot, Start/Stop for a loop (ticked every 50 ms, 0.2 s ahead,
   the way the game ticks it each frame);
-- Defaults, which resets the parameters.
+- Defaults;
+- a live spectrogram (0-8 kHz) of what it plays.
 
 A running loop takes a parameter change at once, so a beat's rate can be swept
-while it plays. The page plays the designs **from source**, the same code the
-generator bundles, through one `AudioContext` of its own, created on the first
-press.
+while it plays. The page plays the design **from source**, the same code the
+generator bundles, through one `AudioContext` of its own created on the first
+press. The old `?sounds` page is gone and its link lands on the filtered list.
 
 ## Tests
 

@@ -14,6 +14,7 @@
 | `scores/<id>.abc` | the source score, which the site arranges for other parameters |
 | `synth/synth.js` | the synth as one ES module ([synth.md](synth.md)) |
 | `samples/` | the sample files, `samples.json` (the manifest) and `SOURCES.md` |
+| `site/jingles.json`, `site/jingles/<id>/<version>.abc` | the jingles, for the site only: not part of what the game would import ([jingles.md](jingles.md)) |
 | `sounds/sounds.js`, `sounds/sounds.meta.json`, `sounds/sounds.d.ts` | the game's sound designs as one ES module, their list and parameters, and the module's declarations; the game imports these today ([../sounds/sounds.md](../sounds/sounds.md)) |
 
 ## Note data (`music/<id>.json`)

@@ -49,6 +49,10 @@ document that owns it in the same change.** Conventions:
   (with a default); renaming or removing one is a change in the game too.
 - **Output stays deterministic**: no timestamps, no randomness, no unordered
   iteration in what is written.
+- **Jingles are the user's own recordings** (docs/music/jingles.md), in
+  `jingles/<id>/` with the recording and `SOURCES.md`; the public-domain rule
+  is for the pieces in `scores/`. They are written for the site only
+  (`export/site/`) until the game uses them.
 - **Public domain only** (docs/music/scores.md): a composition must be PD in
   the EU and the US; transcriptions are our own. Never use an arrangement or a
   recording.
