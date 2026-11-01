@@ -72,13 +72,20 @@ All three repositories, on `claude/epic-planck-cbv6qy` each.
 - Docs updated: `docs/gameplay/sounds.md`, `docs/tooling/sound-import.md`,
   `docs/rendering/vehicle-lights.md`.
 
-**Checks.** See the hand-back for the final results.
+**Checks.**
 - music: `pnpm typecheck`, `pnpm test` (57 tests) and `pnpm build` pass.
-- factory: `pnpm typecheck` passes, and `pnpm test` passes all 117 files (7631
-  tests) in 5 min 26 s.
-- webapp: `pnpm typecheck` passes, and the sound tests (97) pass.
+- factory: `pnpm typecheck` passes; `pnpm test` passes all 117 files (7631 tests)
+  in 5 min 26 s; `pnpm build` passes, including `build:models`.
+- webapp: `pnpm typecheck` (app and worker) passes; `pnpm test` passes all 646
+  files (8696 tests); `pnpm build` passes. `pnpm import:factory` changed only
+  `db/procedural/vehicles.meta.json`, so no model's JS moved.
 - Two renders were sent to the user: `diesel-engine-mainline` and
   `diesel-engine-bus`, each going start, idle, rev, idle, stop.
+
+**Commits.**
+- music: the designs, then these notes.
+- factory: the mapping, the site and the imported sounds.
+- webapp: the imports (`chore(models)`), then the game change (`feat(sound)`).
 
 ## How to test
 
