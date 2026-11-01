@@ -44,6 +44,7 @@ export function countingContext(): { ctx: BaseAudioContext; dest: AudioNode; cou
     loop: false,
     start: () => {},
     stop: () => {},
+    setPeriodicWave: () => {},
   });
   const make = () => {
     nodes++;
@@ -57,6 +58,7 @@ export function countingContext(): { ctx: BaseAudioContext; dest: AudioNode; cou
     createOscillator: make,
     createBufferSource: make,
     createBuffer: (_c: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
+    createPeriodicWave: () => ({}),
   } as unknown as BaseAudioContext;
   return { ctx, dest: node() as unknown as AudioNode, count: () => nodes };
 }

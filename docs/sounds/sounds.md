@@ -5,10 +5,10 @@ Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
-`sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
+`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
 `sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/metrics.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`, `test/metrics.test.ts`
-**See also** - [../site/catalog-site.md](../site/catalog-site.md),
+**See also** - [diesel.md](diesel.md) (the diesel engines), [../site/catalog-site.md](../site/catalog-site.md),
 [../guide/setup-and-build.md](../guide/setup-and-build.md); in the game,
 `rail-island-webapp` `docs/gameplay/sounds.md` (when each sound plays) and
 `docs/tooling/sound-import.md` (`pnpm import:sounds`)
@@ -57,7 +57,9 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `loco-horn` | one-shot | `pitch` 150-500 Hz, `call`, `level` | the two-tone air horn of a diesel, an electric or a multiple unit: a three-reed sawtooth chord (root, major third, fifth) through a soft low-pass |
 | `steam-whistle` | one-shot | `pitch` 400-1100 Hz, `call`, `level` | a steam locomotive's whistle: three sine pipes sliding up onto the note, over band-passed noise |
 | `steam-chuff` | loop | `rate` 0-12 beats/s, `intensity` 0..1, `level` | the exhaust beat: looped noise through a band-pass, gated by one struck envelope per beat; every fourth beat heavier; loudness `0.3 + 0.7 * intensity` |
-| `diesel-engine` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `level` | a diesel's engine: a sawtooth at the firing rate and a square at half of it through a low-pass that opens with `load`, band-passed exhaust noise chopped at the firing rate, and a thin turbo whine rising with `rpm`; every change glides (about 0.35 s), and the revs drift a little every 0.3 s (seeded) |
+| `diesel-engine` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `engine` (`mainline`), `level` | a running diesel of one of six profiles (railcar, shunter, mainline V12, two-stroke V16, bus, truck), matched to recordings: a cycle wave of its cylinders' uneven pulses, the knock and the exhaust's breath gated in step, a turbo and, for the truck, a fan ([diesel.md](diesel.md)) |
+| `diesel-start` | one-shot | `size`, `engine`, `level` | the engine started: the starter cranks, it coughs and catches, flares and settles to idle, fading out as the game starts `diesel-engine` ([diesel.md](diesel.md)) |
+| `diesel-stop` | one-shot | `size`, `engine`, `level` | the engine shut down from idle: it runs down through its compressions, rocks to a stop, the turbo spins down ([diesel.md](diesel.md)) |
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
@@ -106,7 +108,7 @@ another, measured as EBU R128 integrated loudness of a render at the defaults
 | Design | LUFS |
 |---|---|
 | `steam-chuff` | -30.6 (-27.5 at full effort) |
-| `diesel-engine` | -29.6 (-38 idling, -24 at full revs and effort) |
+| `diesel-engine` | -29.5 at every `engine` (about -40 idling, -21 at full revs and effort) |
 | `river-rapids`, `waterfall`, `spring-fountain` | about -31 |
 | `sea-surf` | -33.7 |
 | `woods` | -38 |
@@ -201,7 +203,7 @@ in order, each with a `title` and a one-line `description`:
 
 | Category | What it holds | Designs |
 |---|---|---|
-| `trains` | locomotives and the railway | horn, whistle, exhaust beat, diesel engine, crossing bell |
+| `trains` | locomotives and the railway, and the diesel engines of buses and trucks | horn, whistle, exhaust beat, diesel engine and its start and stop, crossing bell |
 | `ships` | vessels in port and at sea | ship horn |
 | `water` | ambient water, played while in view | rapids, waterfall, spring fountain, sea surf |
 | `nature` | ambient life of the land | woods |
@@ -248,6 +250,10 @@ press. Leaving the page stops everything it still plays, one-shots included.
 - the bell keeps the measured shape of the recording (main tone, the x1.51
   partial, the beating twin);
 - the water's output stays trimmed under the engines, and the woods under the water;
+- the diesel profiles are every `engine` choice, idle and run at their
+  measured speeds, draw a cycle whose strongest line is the firing order with
+  the lines of their unevenness, start after cranking and stop after running
+  down, and change engine while running;
 - the diesel fires faster as it revs and lower the bigger it is, and schedules
   only as far ahead as asked;
 - the woods sing the same birds every time, more the denser and livelier, none

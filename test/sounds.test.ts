@@ -10,7 +10,16 @@ import { BELL_PARTIALS, bellGap, chuffLevel, hornPattern } from "../sounds/desig
 import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
 import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
-import { dieselFiring, dieselLevel } from "../sounds/designs/trains.ts";
+import {
+  DIESEL_PROFILES,
+  cycleSeries,
+  cycleShape,
+  dieselFiring,
+  dieselLevel,
+  dieselRpm,
+  dieselStartTimes,
+  dieselStopTimes,
+} from "../sounds/designs/diesel.ts";
 import { soundsDeclarations, soundsMeta } from "../generator/sounds.ts";
 import type { SoundDesign, SoundValues } from "../sounds/types.ts";
 
@@ -40,6 +49,7 @@ function stubContext() {
     loop: false,
     start: (at: number) => starts.push({ at, what }),
     stop: () => {},
+    setPeriodicWave: () => {},
   });
   const ctx = {
     sampleRate: 48000,
@@ -49,6 +59,7 @@ function stubContext() {
     createOscillator: () => node("osc"),
     createBufferSource: () => node("noise"),
     createBuffer: (_c: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
+    createPeriodicWave: () => ({}),
   } as unknown as BaseAudioContext;
   return { ctx, dest: node("dest") as unknown as AudioNode, starts };
 }
@@ -275,8 +286,9 @@ describe("the diesel engine", () => {
   it("fires faster as it revs, and a big engine lower than a small one", () => {
     expect(dieselFiring(0.5, 1)).toBeGreaterThan(dieselFiring(0.5, 0));
     expect(dieselFiring(1, 0.5)).toBeLessThan(dieselFiring(0, 0.5));
-    expect(dieselFiring(1, 0)).toBeGreaterThanOrEqual(20);
-    expect(dieselFiring(0, 1)).toBeLessThanOrEqual(110);
+    // a mainline engine idles near 40 firings a second and runs up to about 110
+    expect(dieselFiring(0.5, 0)).toBeCloseTo(40);
+    expect(dieselFiring(0.5, 1)).toBeCloseTo(110);
   });
 
   it("runs louder the harder it works, and is never silent", () => {
@@ -304,6 +316,99 @@ describe("the diesel engine", () => {
     const n = targets.length;
     v.tick(1, 1);
     expect(targets).toHaveLength(n);
+  });
+});
+
+describe("the diesel profiles", () => {
+  const engines = Object.keys(DIESEL_PROFILES);
+
+  it("are every choice of `engine`, the same on the loop, the start and the stop", () => {
+    for (const id of ["diesel-engine", "diesel-start", "diesel-stop"]) {
+      const p = soundById(id)!.params.find((x) => x.name === "engine");
+      if (p?.kind !== "choice") throw new Error(`${id} has no engine choice`);
+      expect(p.values.map((v) => v.value), id).toEqual(engines);
+      expect(p.default).toBe("mainline");
+    }
+  });
+
+  it("idle and run at their engine's measured speeds, `size` 0.5 being the profile itself", () => {
+    for (const e of engines) {
+      const p = DIESEL_PROFILES[e as keyof typeof DIESEL_PROFILES];
+      expect(dieselRpm(e, 0.5, 0), e).toBeCloseTo(p.idleRpm);
+      expect(dieselRpm(e, 0.5, 1), e).toBeCloseTo(p.maxRpm);
+      expect(dieselRpm(e, 0, 0.5)).toBeGreaterThan(dieselRpm(e, 1, 0.5));
+    }
+    // a four-stroke six fires three times a turn, a two-stroke V16 sixteen times
+    expect(dieselFiring(0.5, 0, "bus")).toBeCloseTo((600 / 60) * 3);
+    expect(dieselFiring(0.5, 0, "two-stroke")).toBeCloseTo((315 / 60) * 16);
+    // an unknown engine is the mainline one
+    expect(dieselFiring(0.5, 0.3, "steam")).toBe(dieselFiring(0.5, 0.3, "mainline"));
+  });
+
+  it("draw a cycle whose strongest line is the firing order, with the half orders of an uneven engine", () => {
+    for (const e of engines) {
+      const p = DIESEL_PROFILES[e as keyof typeof DIESEL_PROFILES];
+      const { real, imag } = cycleSeries(cycleShape(p, 0.1, 1));
+      const mag = (k: number) => Math.hypot(real[k]!, imag[k]!);
+      let best = 1;
+      for (let k = 2; k < real.length; k++) if (mag(k) > mag(best)) best = k;
+      expect(best % p.cylinders, e).toBe(0);
+      // the lope: lines between the firing order's, which an even engine would not have
+      let between = 0;
+      for (let k = 1; k < 4 * p.cylinders; k++) if (k % p.cylinders !== 0) between = Math.max(between, mag(k));
+      expect(between / mag(p.cylinders), e).toBeGreaterThan(0.05);
+    }
+    // the same engine always lopes the same way
+    expect(cycleShape(DIESEL_PROFILES.truck, 0.3, 1)).toEqual(cycleShape(DIESEL_PROFILES.truck, 0.3, 1));
+  });
+
+  it("start by cranking before they catch, and end once settled at idle", () => {
+    for (const e of engines) {
+      const { catches, idles, ends } = dieselStartTimes(e);
+      expect(catches, e).toBeGreaterThan(0.5);
+      expect(idles).toBeGreaterThan(catches);
+      expect(ends).toBeGreaterThan(idles);
+      const d = soundById("diesel-start")!;
+      if (d.kind !== "oneShot") throw new Error("diesel-start is a one-shot");
+      const { ctx, dest } = stubContext();
+      expect(d.play(ctx, dest, 2, { engine: e }).endsAt).toBeCloseTo(2 + ends);
+    }
+    // a big engine cranks longer than a bus
+    expect(dieselStartTimes("mainline").catches).toBeGreaterThan(dieselStartTimes("bus").catches);
+  });
+
+  it("stop by running down after the fuel is cut, the turbo spinning on", () => {
+    for (const e of engines) {
+      const { cut, still, ends } = dieselStopTimes(e);
+      expect(still, e).toBeGreaterThan(cut);
+      expect(ends).toBeGreaterThan(still);
+      const d = soundById("diesel-stop")!;
+      if (d.kind !== "oneShot") throw new Error("diesel-stop is a one-shot");
+      const { ctx, dest } = stubContext();
+      expect(d.play(ctx, dest, 1, { engine: e }).endsAt).toBeCloseTo(1 + ends);
+    }
+    expect(dieselStopTimes("two-stroke").still).toBeGreaterThan(dieselStopTimes("truck").still);
+  });
+
+  it("change engine while running", () => {
+    const { ctx, dest } = stubContext();
+    let waves = 0;
+    const spy = ctx as unknown as { createOscillator: () => { setPeriodicWave: () => void } };
+    const make = spy.createOscillator;
+    spy.createOscillator = () => {
+      const o = make();
+      o.setPeriodicWave = () => void waves++;
+      return o;
+    };
+    const d = soundById("diesel-engine")!;
+    if (d.kind !== "loop") throw new Error("diesel-engine is a loop");
+    const v = d.start(ctx, dest, 0, { engine: "bus" });
+    v.tick(0, 0.5);
+    const before = waves;
+    v.set({ engine: "truck" });
+    v.tick(0.5, 0.5);
+    expect(waves).toBe(before + 3);
+    v.stop(1);
   });
 });
 
