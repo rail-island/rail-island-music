@@ -174,7 +174,8 @@ export function arrange(piece: PieceMeta, score: Score, params: Params): Perform
     melody: written.melody,
     harmony: written.harmony.length > 0 ? written.harmony : harmonize(written.melody, chordAt, bars),
     bass: written.bass.length > 0 ? written.bass : walkBass(bars, piece.groove, chordAt, chordChangesAt),
-    chords: comp(bars, piece.groove, chordAt, ensemble.chordStyle),
+    // A score that writes its harmony and its bass is complete: no chords are added.
+    chords: written.harmony.length > 0 && written.bass.length > 0 ? [] : comp(bars, piece.groove, chordAt, ensemble.chordStyle),
     drums: ensemble.drums === "none" ? [] : drums(bars, piece.groove, ensemble.drums),
   };
 

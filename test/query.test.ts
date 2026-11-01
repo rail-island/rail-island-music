@@ -15,10 +15,10 @@ describe("query string", () => {
     expect(parseView(serializeView(v))).toEqual(v);
   });
 
-  it("opens a jingle with its version, and a sound effect without parameters", () => {
-    const j = parseView("?jingle=jingle-3&version=rewrite&length=long");
-    expect(j.item).toEqual({ kind: "jingle", id: "jingle-3" });
-    expect(j.params).toEqual({ version: "rewrite", length: "long" });
+  it("opens a jingle with its parameters, and a sound effect without parameters", () => {
+    const j = parseView("?jingle=jingle-1&tempo=lively&length=long");
+    expect(j.item).toEqual({ kind: "jingle", id: "jingle-1" });
+    expect(j.params).toEqual({ tempo: "lively", length: "long" });
     expect(parseView(serializeView(j))).toEqual(j);
     const s = parseView("?kind=effect&set=water&sound=waterfall&ensemble=piano");
     expect(s.item).toEqual({ kind: "effect", id: "waterfall" });

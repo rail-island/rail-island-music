@@ -1,6 +1,5 @@
-// The detail of a piece or a jingle: its facts, its parameter pickers (a
-// jingle's Version among them), the player controls and the arranged score,
-// which follows the playback.
+// The detail of a piece or a jingle: its facts, its parameter pickers, the
+// player controls and the arranged score, which follows the playback.
 
 import { For, Show, createEffect, createMemo, createResource, on } from "solid-js";
 import type { ParamValue } from "../lib/params.ts";

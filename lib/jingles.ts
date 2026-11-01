@@ -1,34 +1,19 @@
 // Jingles (docs/music/jingles.md): short motifs recorded by hand as MIDI and
-// transcribed twice -- a tidy version (the playing, quantized, its slips fixed)
-// and a rewrite (the idea, written again cleanly with a cadence). Each one is a
-// folder jingles/<id>/ with jingle.json, tidy.abc, rewrite.abc, SOURCES.md and
-// the recording. They arrange like pieces, with a Version parameter in place of
-// Length: a jingle is never shortened or repeated. Isomorphic: the generator
-// and the site run the same code.
+// transcribed as played, quantized and its slips fixed. Each one is a folder
+// jingles/<id>/ with jingle.json, score.abc, SOURCES.md and the recording. They
+// arrange like pieces, without Length: a jingle is never shortened or
+// repeated. Isomorphic: the generator and the site run the same code.
 
 import { PARAMS, type Groove, type ParamValue, type Params, type PieceMeta } from "./params.ts";
 
-export type JingleVersion = "tidy" | "rewrite";
-export const JINGLE_VERSIONS: readonly JingleVersion[] = ["tidy", "rewrite"];
-
-/** A parameter of a jingle: Version, then a piece's parameters but Length. */
+/** A parameter of a jingle: a piece's parameters but Length. */
 export interface JingleParamDef {
-  name: "version" | "ensemble" | "tempo" | "key";
+  name: "ensemble" | "tempo" | "key";
   title: string;
   values: ParamValue[];
 }
 
-export const JINGLE_PARAMS: JingleParamDef[] = [
-  {
-    name: "version",
-    title: "Version",
-    values: [
-      { value: "tidy", title: "Tidied (as played)" },
-      { value: "rewrite", title: "Rewritten" },
-    ],
-  },
-  ...(PARAMS.filter((p) => p.name !== "length") as JingleParamDef[]),
-];
+export const JINGLE_PARAMS: JingleParamDef[] = PARAMS.filter((p) => p.name !== "length") as JingleParamDef[];
 
 export type JingleParams = Record<JingleParamDef["name"], string>;
 
@@ -78,7 +63,7 @@ export function resolveJingleParams(jingle: JingleMeta, overrides: Partial<Recor
 /**
  * What the arranger takes for a jingle: the jingle as a piece, and its
  * parameters as a piece's -- the whole score, once (`length` "full"; a jingle
- * has no repeats). The version only picks the score, so it is not passed on.
+ * has no repeats).
  */
 export function jingleAsPiece(jingle: JingleMeta, params: JingleParams): { piece: PieceMeta; params: Params } {
   return {

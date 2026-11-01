@@ -62,8 +62,8 @@ OfflineAudioContext and writes WAV or MP3 (ffmpeg). `renderNotation` draws the
 arranged score with abcjs, as the site does. Parameters are `name=value`; any
 not given take the piece's defaults.
 
-Both take a jingle id as well (`version=tidy|rewrite` among the parameters,
-[../music/jingles.md](../music/jingles.md)). A third renders one of the game's sound designs, straight from `sounds/` (no
+Both take a jingle id as well
+([../music/jingles.md](../music/jingles.md)). A third renders one of the game's sound designs, straight from `sounds/` (no
 `pnpm build:music` needed):
 
 ```bash

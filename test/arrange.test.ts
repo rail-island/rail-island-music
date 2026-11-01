@@ -29,6 +29,19 @@ describe("arrange", () => {
     expect(JSON.stringify(arrange(meta, score, params()))).toBe(JSON.stringify(arrange(meta, score, params())));
   });
 
+  it("adds no chords to a score that writes its harmony and its bass, but still the drums", () => {
+    const full = parseAbc(
+      ["X:1", "T:Test", "M:2/4", "L:1/8", "Q:1/4=120", "V:m role=melody", "V:h role=harmony", "V:b role=bass", "K:C",
+        "V:m", '"C"c2 e2 | "G7"d2 B2 |]', "V:h", "E4 | F4 |]", "V:b", "C,4 | G,,4 |]"].join("\n"),
+    );
+    const perf = arrange(meta, full, params());
+    expect(perf.tracks.find((t) => t.id === "chords")).toBeUndefined();
+    expect(perf.tracks.find((t) => t.id === "drums")).toBeDefined();
+    // Either voice alone still gets the chords.
+    expect(perf.tracks.length).toBeGreaterThan(0);
+    expect(track(arrange(meta, score, params()), "chords")).toBeDefined();
+  });
+
   it("plays the repeats as written, the pickup only once silent", () => {
     const perf = arrange(meta, score, params());
     // pickup, 3 bars, pickup, 3 bars

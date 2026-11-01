@@ -48,7 +48,8 @@ In the chiptune ensemble the chords are a 16th-note arpeggio.
 When the score has no `harmony` voice, a second line is generated: under every
 melody note of an eighth or longer, the nearest chord tone a third to a sixth
 below (skipped under short non-chord tones). A written `bass` or `harmony` voice
-replaces the generated one.
+replaces the generated one. A score that writes both a `harmony` and a `bass` voice is
+complete as written: no chords are generated for it (the drums still are).
 
 ## Ensembles
 

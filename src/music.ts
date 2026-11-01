@@ -58,9 +58,9 @@ export async function arrangePiece(entry: CatalogEntry, params: Params): Promise
   return arrangement(arrange(entry, await loadScore(`/scores/${entry.id}.abc`), params));
 }
 
-/** Arrange a jingle: its version's score, with the rest of the parameters. */
+/** Arrange a jingle: its score, with its parameters. */
 export async function arrangeJingle(entry: JingleEntry, params: JingleParams): Promise<Arrangement> {
-  const score = await loadScore(`/site/jingles/${entry.id}/${params.version}.abc`);
+  const score = await loadScore(`/site/jingles/${entry.id}/score.abc`);
   const asPiece = jingleAsPiece(entry, params);
   return arrangement(arrange(asPiece.piece, score, asPiece.params));
 }

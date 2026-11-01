@@ -16,7 +16,7 @@ and table), in shape (one filterable list, a detail per item) and in stack
   parameters, then writes the arranged ABC.
 - **Jingles** - fetched from `/site/jingles.json`, the build's site-only copy
   ([../music/jingles.md](../music/jingles.md)). A jingle's page fetches
-  `/site/jingles/<id>/<version>.abc`. If the file is missing, the site simply
+  `/site/jingles/<id>/score.abc`. If the file is missing, the site simply
   shows no jingles.
 - **Sound effects** - the designs themselves (`sounds/`), bundled into the site
   from source, so the page plays the very code the game imports.
@@ -42,7 +42,7 @@ with its filters.
 
 - the facts: composer, year, group, key and meter;
 - a picker for each parameter, defaults marked: a piece's four (ensemble, tempo,
-  length, key), a jingle's four (Version, ensemble, tempo, key). A change
+  length, key), a jingle's three (ensemble, tempo, key). A change
   re-arranges, and while it plays it carries on in the new arrangement at the
   same point;
 - Play/Pause, Stop, a progress slider (seeks), the time, and a volume slider;
@@ -52,9 +52,6 @@ with its filters.
   a click on a note or rest of a bar seeks there;
 - a closing line: why a piece is public domain, or what a jingle was
   transcribed from.
-
-A jingle's **Version** switches between its tidy and rewritten scores, to
-compare the two.
 
 ## A sound effect (`EffectPage`)
 

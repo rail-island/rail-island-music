@@ -3,13 +3,12 @@
   "title": "Jingle 1",
   "composer": "Rail Island",
   "year": 2026,
-  "groove": "two-beat",
+  "groove": "waltz",
   "swing": 0.5,
   "defaults": {
-    "version": "tidy",
     "ensemble": "piano",
     "tempo": "normal",
     "key": "0"
   },
-  "source": "Piano recording Recording_2026-11-01_11_53.mid, D major."
+  "source": "Piano recording Recording_2026-11-01_13_48.mid, D major, 3/4."
 }

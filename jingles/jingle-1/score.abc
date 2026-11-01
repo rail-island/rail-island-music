@@ -1,0 +1,16 @@
+X:1
+T:Jingle 1
+C:Rail Island
+M:3/4
+L:1/8
+Q:1/4=138
+V:mel role=melody name="Melody"
+V:harm role=harmony name="Harmony"
+V:bass role=bass name="Bass"
+K:D
+V:mel
+"D"B2 A F2 G | "D/C#"B2 A F2 G | "D/C"B2 A [FA]2 z | "G/B"(3G/A/B/ d2 d B G | "D"G2 F D2 F | "A7"E2 E D2 C | "D"D4 D F/A/ | "D"d6 |]
+V:harm
+[DF]6 | C6 | =C6 | D5 B, | A,6 | [A,C]4 A,2 | A,3 A,3 | [DF]6 |]
+V:bass
+D,,/A,,/ D, F, D, A,,2 | C,,/A,,/ C, F, C, A,,2 | =C,,/A,,/ =C, F, =C, =C,,2 | [B,,,B,,]2 B,, D, G,2 | D,,/A,,/ D, F, D, A,,2 | A,,,/E,,/ A,,/C,/ E,4 | D,, [A,,D,] F,4 | [D,,D,]6 |]
