@@ -1,36 +1,66 @@
 # Diesel engines
 
-**Covers** - the diesel engine sounds: the running engine (`diesel-engine`), its
-start (`diesel-start`) and stop (`diesel-stop`), the six engine profiles and the
-recordings they were matched to, how an engine is synthesized, and how the game
-chains the three sounds.
+**Covers** - the diesel engine sounds: one loop per engine
+(`diesel-engine-railcar`, `-shunter`, `-mainline`, `-two-stroke`, `-bus`,
+`-truck`), the `state` that starts and shuts each down inside its voice, the six
+engine profiles and the recordings they were matched to, and how an engine is
+synthesized.
 **Code** - `sounds/designs/diesel.ts`, `test/sounds.test.ts` (the diesel engine,
 the diesel profiles)
 **See also** - [sounds.md](sounds.md) (the contract, every design, the levels),
-[../guide/setup-and-build.md](../guide/setup-and-build.md)
+[../guide/setup-and-build.md](../guide/setup-and-build.md); in the factory,
+`docs/models/sounds.md` (which vehicle plays which engine); in the game,
+`docs/gameplay/sounds.md` (when an engine starts and stops)
 
 ## The sounds
 
-| Id | Kind | Parameters | What it is |
-|---|---|---|---|
-| `diesel-engine` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `engine` (`mainline`), `level` | the engine running: idle at `rpm` 0, full revs at 1; `load` is how hard it works |
-| `diesel-start` | one-shot | `size`, `engine`, `level` | silent until the engine coughs (no starter, no cranking), then it catches, flares past idle and settles |
-| `diesel-stop` | one-shot | `size`, `engine`, `level` | from idle the fuel is cut: it runs down through its last compressions, rocks to a stop, the turbo spins down |
+Each engine is its own loop, one per profile below; there is no engine choice to
+make. They share their parameters:
 
-`size` scales a profile's revs: x1.2 at 0, x1 at 0.5 (the profile as
-measured), x0.8 at 1. It was the only size control before the profiles and stays,
-with its name, for the game.
+| Parameter | Values | What it is |
+|---|---|---|
+| `rpm` | 0..1 (0.4) | the revs: idle at 0, full at 1 |
+| `load` | 0..1 (0.5) | how hard it works |
+| `size` | 0..1 (0.5) | a finer size within the profile: its revs x1.2 at 0, x1 at 0.5 (the profile as measured), x0.8 at 1 |
+| `state` | `run` (default), `start`, `stop`, `off` | whether it runs, below |
+| `level` | 0..1 (1) | how loud |
 
-**Chaining them in the game.** A start ends at idle and fades out over its last
-0.6 s (`dieselStartTimes(engine).idles` to `.ends`). The game starts
-`diesel-engine` at `rpm` 0 at `idles`, and the loop is at its level at once. To
-shut down, the game stops the loop (its 0.06 s fade) and plays `diesel-stop` at
-the same moment, which fades in over the same 0.06 s from idle. A stop's length
-is `dieselStopTimes(engine).ends`, and its engine stands still at `.still`.
+| Id | The engine |
+|---|---|
+| `diesel-engine-railcar` | a railcar's or DMU's underfloor inline six |
+| `diesel-engine-shunter` | a shunting loco's medium-speed six |
+| `diesel-engine-mainline` | a mainline loco's turbocharged V12 |
+| `diesel-engine-two-stroke` | a big two-stroke V16, the EMD kind |
+| `diesel-engine-bus` | a city bus's turbocharged inline six, muffled |
+| `diesel-engine-truck` | a truck's air-cooled V8, open and clattering, with its fan |
+
+**The state.** `start` and `run` mean the engine runs, `stop` and `off` that it
+does not (`dieselRuns`). Setting the other side with `set()` plays the
+transition inside the same voice, from the moment of the next tick:
+
+- **to running** - the start: silent until it coughs, catches, flares past idle
+  and settles at idle `dieselStartTimes(engine).idles` (2.3 s) later; from
+  there it glides to `rpm` and `load`. Asked to rev during the start, it finishes
+  the start first.
+- **to shut down** - the stop: back to idle, the fuel is cut 0.3 s later, it runs
+  down and rocks to a stop, the turbo spins on; silent
+  `dieselStopTimes(engine).ends` after the change. A start during a run-down
+  starts it again from where it is.
+
+Within a side the two words differ only when a voice **begins**: at `run` it is
+running at once, at `start` it plays the start, at `stop` or `off` it is silent.
+A player that begins a voice for an engine that is already running (it came into
+hearing) therefore begins it at `run`, and one for an engine that is shut down
+at `off`, with no transition to hear.
+
+**When it is silent.** A running engine's voice reports `endsAt` Infinity, like
+every loop. Shut down, it reports when it falls silent: the end of its run-down,
+or its start for a voice begun shut down. A player can drop the voice from then
+on (the contract, [sounds.md](sounds.md)).
 
 ## The profiles (`DIESEL_PROFILES`)
 
-| `engine` | What | Cylinders, strokes | Idle - full rpm | Firing /s at idle - full | Turbo | Runs down |
+| Profile (`diesel-engine-<profile>`) | What | Cylinders, strokes | Idle - full rpm | Firing /s at idle - full | Turbo | Runs down |
 |---|---|---|---|---|---|---|
 | `railcar` | a railcar's or DMU's underfloor inline six | 6, four-stroke | 600 - 2000 | 30 - 100 | light | 1.6 s |
 | `shunter` | a shunting loco's medium-speed six | 6, four-stroke | 420 - 1250 | 21 - 63 | light | 2.6 s |
@@ -71,17 +101,17 @@ unevenness adds the lines between, the once-a-cycle lope a real engine has
 The three cycle oscillators share their frequency automation, so the knock and
 the breath stay in step with the tone. The waves are computed once per context
 and profile. Every change glides (about 0.35 s), and the revs drift by up to 1%
-every 0.3 s (seeded): the governor hunting. A running loop changes `engine` in
-place.
+every 0.3 s (seeded): the governor hunting. A start or a stop first drops what
+was scheduled from its moment on, then lays down its own course.
 
-**Start.** There is no starter motor and no cranking to hear: the start is
+**Start** (`state` to running). There is no starter motor and no cranking to hear: the start is
 silent until the engine itself sounds (a first version had a starter's
 sawtooth whine, which droned like an electric buzz and was dropped). For half a
 second it coughs (six uneven bursts, `COUGHING`), then catches and flares to
 1.45x idle, and the governor pulls it back to idle over about a second. Every
 engine starts the same way, so `dieselStartTimes` is the same for all.
 
-**Stop.** At 0.3 s the fuel is cut: the knock and the breath stop, and the
+**Stop** (`state` to shut down). It glides back to idle, and at 0.3 s the fuel is cut: the knock and the breath stop, and the
 engine coasts down through its compressions over `rundown`, then rocks back on
 the last one (a low thud). The turbo spins down on its own, slower.
 

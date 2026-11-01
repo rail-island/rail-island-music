@@ -26,7 +26,16 @@ describe("the list", () => {
   it("searches every word across title, id, description, category and kind", () => {
     expect(ids("bell")).toEqual(["crossing-bell", "church-bell", "big-ben", "notre-dame-bell"]);
     expect(ids("ships horn")).toEqual(["ship-horn"]);
-    expect(ids("trains loop")).toEqual(["steam-chuff", "diesel-engine", "crossing-bell"]);
+    expect(ids("trains loop")).toEqual([
+      "steam-chuff",
+      "diesel-engine-railcar",
+      "diesel-engine-shunter",
+      "diesel-engine-mainline",
+      "diesel-engine-two-stroke",
+      "diesel-engine-bus",
+      "diesel-engine-truck",
+      "crossing-bell",
+    ]);
     expect(ids("waterfall demolish")).toEqual([]);
   });
 

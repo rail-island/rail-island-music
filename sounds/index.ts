@@ -7,7 +7,14 @@ import { bigBen, churchBell, notreDameBell } from "./designs/bells.ts";
 import { editBuild, editDemolish } from "./designs/editor.ts";
 import { shipHorn } from "./designs/ships.ts";
 import { crossingBell, locoHorn, steamChuff, steamWhistle } from "./designs/trains.ts";
-import { dieselEngine, dieselStart, dieselStop } from "./designs/diesel.ts";
+import {
+  dieselEngineBus,
+  dieselEngineMainline,
+  dieselEngineRailcar,
+  dieselEngineShunter,
+  dieselEngineTruck,
+  dieselEngineTwoStroke,
+} from "./designs/diesel.ts";
 import { woods } from "./designs/nature.ts";
 import { riverRapids, seaSurf, springFountain, waterfall } from "./designs/water.ts";
 import { resolve } from "./nodes.ts";
@@ -20,9 +27,12 @@ export const SOUNDS: readonly SoundDesign[] = [
   locoHorn,
   steamWhistle,
   steamChuff,
-  dieselEngine,
-  dieselStart,
-  dieselStop,
+  dieselEngineRailcar,
+  dieselEngineShunter,
+  dieselEngineMainline,
+  dieselEngineTwoStroke,
+  dieselEngineBus,
+  dieselEngineTruck,
   crossingBell,
   shipHorn,
   riverRapids,
@@ -39,7 +49,7 @@ export const SOUNDS: readonly SoundDesign[] = [
 
 /** Every category, in list order; SOUNDS keeps each category's designs together in this order. */
 export const CATEGORIES: readonly SoundCategoryInfo[] = [
-  { id: "trains", title: "Trains", description: "Locomotives and the railway: horns, whistles, the exhaust beat, diesel engines (locomotives, railcars, buses and trucks) running, starting and stopping, the level crossing's bell." },
+  { id: "trains", title: "Trains", description: "Locomotives and the railway: horns, whistles, the exhaust beat, diesel engines (railcars, shunters, mainline locomotives, buses and trucks) running, starting and stopping, the level crossing's bell." },
   { id: "ships", title: "Ships", description: "Vessels in port and at sea." },
   { id: "water", title: "Water", description: "Ambient water, played while it is in view: rivers, waterfalls, springs and the sea." },
   { id: "nature", title: "Nature", description: "Ambient life of the land: woods and their birds." },
