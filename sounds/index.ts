@@ -32,7 +32,7 @@ export function soundById(id: string): SoundDesign | undefined {
 
 /** A design without its code. */
 export function soundMeta(s: SoundDesign): SoundMeta {
-  return { id: s.id, title: s.title, description: s.description, kind: s.kind, params: s.params };
+  return { id: s.id, title: s.title, category: s.category, description: s.description, kind: s.kind, params: s.params };
 }
 
 export { resolve as resolveValues };

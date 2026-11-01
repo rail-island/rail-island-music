@@ -37,6 +37,7 @@ function knock(ctx: BaseAudioContext, dest: AudioNode, t: number, v: SoundValues
 export const editBuild = oneShot({
   id: "edit-build",
   title: "Build",
+  category: "editor",
   description: "A committed build in the editor: a short wooden knock.",
   params: [LEVEL],
   play: (ctx, dest, t, v) => knock(ctx, dest, t, v, false),
@@ -45,6 +46,7 @@ export const editBuild = oneShot({
 export const editDemolish = oneShot({
   id: "edit-demolish",
   title: "Demolish",
+  category: "editor",
   description: "A committed demolition or removal in the editor: a crumble.",
   params: [LEVEL],
   play: (ctx, dest, t, v) => knock(ctx, dest, t, v, true),

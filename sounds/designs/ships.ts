@@ -6,6 +6,7 @@ import { LEVEL, envelope, filter, gain, num, oneShot, voiceOf } from "../nodes.t
 export const shipHorn = oneShot({
   id: "ship-horn",
   title: "Ship horn",
+  category: "ships",
   description: "A ship's horn, leaving a berth (full length) and coming to rest at one (shorter).",
   params: [
     { name: "pitch", title: "Pitch", kind: "number", min: 50, max: 250, step: 1, default: 120, unit: "Hz" },

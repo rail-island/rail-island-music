@@ -1,11 +1,11 @@
-// The bar at the bottom of the page that keeps the current piece playing while
-// you browse: its title, Play/Pause and the progress.
+// The bar at the bottom of the page that keeps the current piece or jingle
+// playing while you browse: its title, Play/Pause and the progress.
 
 import { Show } from "solid-js";
 import { nowPlaying, pause, play, playing, position } from "./music";
 import { formatTime } from "./query";
 
-export function MiniPlayer(props: { current: string | null; open: (id: string) => void }) {
+export function MiniPlayer(props: { current: string | null; open: (kind: "piece" | "jingle", id: string) => void }) {
   return (
     <Show when={nowPlaying() && nowPlaying()!.entry.id !== props.current ? nowPlaying() : null}>
       {(now) => (
@@ -17,7 +17,7 @@ export function MiniPlayer(props: { current: string | null; open: (id: string) =
           >
             {playing() ? "❚❚" : "▶"}
           </button>
-          <button class="music-mini__title" onClick={() => props.open(now().entry.id)}>
+          <button class="music-mini__title" onClick={() => props.open(now().entry.kind, now().entry.id)}>
             {now().entry.title}
             <span class="music-muted"> &middot; {now().entry.composer}</span>
           </button>

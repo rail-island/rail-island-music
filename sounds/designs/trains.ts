@@ -40,6 +40,7 @@ export function hornPattern(kind: "horn" | "whistle", call: string): Array<[numb
 export const locoHorn = oneShot({
   id: "loco-horn",
   title: "Locomotive horn",
+  category: "trains",
   description: "A diesel's, an electric's or a multiple unit's two-tone air horn: leaving a platform, before a crossing or a tunnel, or on the player's Horn.",
   params: [
     { name: "pitch", title: "Pitch", kind: "number", min: 150, max: 500, step: 5, default: 300, unit: "Hz" },
@@ -79,6 +80,7 @@ export const locoHorn = oneShot({
 export const steamWhistle = oneShot({
   id: "steam-whistle",
   title: "Steam whistle",
+  category: "trains",
   description: "A steam locomotive's whistle, played where another locomotive would sound its horn.",
   params: [
     { name: "pitch", title: "Pitch", kind: "number", min: 400, max: 1100, step: 10, default: 700, unit: "Hz" },
@@ -134,6 +136,7 @@ export function chuffLevel(intensity: number): number {
 export const steamChuff = loop({
   id: "steam-chuff",
   title: "Steam exhaust beat",
+  category: "trains",
   description: "A running steam locomotive's exhaust: one burst of steam per beat, at the rate its speed gives and as strong as it works.",
   params: [
     { name: "rate", title: "Beats per second", kind: "number", min: 0, max: 12, step: 0.1, default: 4, unit: "/s" },
@@ -208,6 +211,7 @@ export function bellGap(n: number, interval: number, uneven: number): number {
 export const crossingBell = loop({
   id: "crossing-bell",
   title: "Level crossing bell",
+  category: "trains",
   description: "A level crossing's electric bell, ringing for as long as its lamps blink.",
   params: [
     { name: "pitch", title: "Pitch", kind: "number", min: 600, max: 2400, step: 10, default: 1590, unit: "Hz" },

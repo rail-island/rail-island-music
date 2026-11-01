@@ -253,7 +253,7 @@ describe("the export", () => {
     expect(meta.module).toBe("sounds.js");
     expect(meta.sounds.map((s) => s.id)).toEqual(SOUNDS.map((s) => s.id));
     expect(JSON.stringify(meta)).toBe(JSON.stringify(soundsMeta()));
-    for (const s of meta.sounds) expect(Object.keys(s)).toEqual(["id", "title", "description", "kind", "params"]);
+    for (const s of meta.sounds) expect(Object.keys(s)).toEqual(["id", "title", "category", "description", "kind", "params"]);
   });
 
   it("declares the bundle from a contract that is types only", () => {

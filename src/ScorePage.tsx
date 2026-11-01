@@ -1,20 +1,38 @@
-// A piece's page: its facts, the four parameter pickers, the player controls
-// and the arranged score, which follows the playback.
+// The detail of a piece or a jingle: its facts, its parameter pickers (a
+// jingle's Version among them), the player controls and the arranged score,
+// which follows the playback.
 
 import { For, Show, createEffect, createMemo, createResource, on } from "solid-js";
-import type { Catalog, CatalogEntry } from "../lib/catalog.ts";
-import { PARAMS, type ParamName, resolveParams } from "../lib/params.ts";
+import type { ParamValue } from "../lib/params.ts";
 import { ScoreView } from "./ScoreView";
-import { arrangePiece, error, loading, nowPlaying, pause, play, playing, position, seek, setVolume, stop, volume } from "./music";
+import { type Arrangement, type Playable, error, loading, nowPlaying, pause, play, playing, position, seek, setVolume, stop, volume } from "./music";
 import { formatTime, type ViewState } from "./query";
 
-export function PiecePage(props: { entry: CatalogEntry; catalog: Catalog; view: ViewState; go: (v: ViewState, replace?: boolean) => void }) {
-  const params = createMemo(() => resolveParams(props.entry, props.view.params));
-  const key = createMemo(() => props.entry.id + JSON.stringify(params()));
-  const [arrangement] = createResource(key, () => arrangePiece(props.entry, params()));
+/** A piece or a jingle as its page shows it. */
+export interface ScoreItem extends Playable {
+  /** The line of facts under the title: composer, year, group, key and meter. */
+  facts: string[];
+  params: { name: string; title: string; values: ParamValue[] }[];
+  defaults: Record<string, string>;
+  arrange(params: Record<string, string>): Promise<Arrangement>;
+  /** A closing line (why a piece is public domain, where a jingle comes from). */
+  note: string;
+}
+
+export function ScorePage(props: { item: ScoreItem; view: ViewState; go: (v: ViewState, replace?: boolean) => void }) {
+  const params = createMemo(() => {
+    const out: Record<string, string> = {};
+    for (const d of props.item.params) {
+      const v = props.view.params[d.name];
+      out[d.name] = v !== undefined && d.values.some((x) => x.value === v) ? v : props.item.defaults[d.name]!;
+    }
+    return out;
+  });
+  const key = createMemo(() => props.item.kind + props.item.id + JSON.stringify(params()));
+  const [arrangement] = createResource(key, () => props.item.arrange(params()));
   const current = createMemo(() => {
     const now = nowPlaying();
-    return now && now.entry.id === props.entry.id && now.arrangement === arrangement() ? now : null;
+    return now && now.entry.id === props.item.id && now.arrangement === arrangement() ? now : null;
   });
   const isPlaying = () => !!current() && playing();
   const shownPosition = () => (current() ? position() : props.view.t ?? 0);
@@ -23,20 +41,20 @@ export function PiecePage(props: { entry: CatalogEntry; catalog: Catalog; view: 
   createEffect(
     on(arrangement, (next, prev) => {
       const now = nowPlaying();
-      if (!next || !prev || !now || now.entry.id !== props.entry.id || !playing()) return;
+      if (!next || !prev || !now || now.entry.id !== props.item.id || !playing()) return;
       const at = (position() / prev.perf.duration) * next.perf.duration;
-      void play(props.entry, next, at);
+      void play(props.item, next, at);
     }),
   );
 
-  const setParam = (name: ParamName, value: string) => props.go({ ...props.view, params: { ...props.view.params, [name]: value }, t: null }, true);
+  const setParam = (name: string, value: string) => props.go({ ...props.view, params: { ...props.view.params, [name]: value }, t: null }, true);
   const toggle = () => {
     const a = arrangement();
     if (!a) return;
     if (isPlaying()) {
       pause();
       props.go({ ...props.view, t: position() }, true);
-    } else void play(props.entry, a, current() ? position() : props.view.t ?? 0);
+    } else void play(props.item, a, current() ? position() : props.view.t ?? 0);
   };
   const seekTo = (seconds: number) => {
     const a = arrangement();
@@ -44,21 +62,15 @@ export function PiecePage(props: { entry: CatalogEntry; catalog: Catalog; view: 
     if (current()) seek(seconds);
     else props.go({ ...props.view, t: seconds }, true);
   };
-  const setLabel = () => props.catalog.sets.find((s) => s.id === props.entry.set)?.title ?? props.entry.set;
 
   return (
     <section class="music-piece">
       <p class="music-facts">
-        <span>{props.entry.composer}</span>
-        <span>{props.entry.year}</span>
-        <span>{setLabel()}</span>
-        <span>
-          {props.entry.key}, {props.entry.meter}
-        </span>
+        <For each={props.item.facts}>{(f) => <span>{f}</span>}</For>
       </p>
 
       <div class="music-params">
-        <For each={PARAMS}>
+        <For each={props.item.params}>
           {(d) => (
             <label class="music-param">
               <span>{d.title}</span>
@@ -67,7 +79,7 @@ export function PiecePage(props: { entry: CatalogEntry; catalog: Catalog; view: 
                   {(v) => (
                     <option value={v.value}>
                       {v.title}
-                      {v.value === props.entry.defaults[d.name] ? " (default)" : ""}
+                      {v.value === props.item.defaults[d.name] ? " (default)" : ""}
                     </option>
                   )}
                 </For>
@@ -125,7 +137,7 @@ export function PiecePage(props: { entry: CatalogEntry; catalog: Catalog; view: 
           {(a) => <ScoreView arrangement={a()} position={shownPosition()} following={isPlaying()} onSeek={seekTo} />}
         </Show>
       </Show>
-      <p class="music-muted music-pd">Public domain: {props.entry.publicDomain}</p>
+      <p class="music-muted music-pd">{props.item.note}</p>
     </section>
   );
 }

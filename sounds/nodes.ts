@@ -119,6 +119,7 @@ export function oneShot(def: Base & { play(ctx: BaseAudioContext, dest: AudioNod
   return {
     id: def.id,
     title: def.title,
+    category: def.category,
     description: def.description,
     params: def.params,
     kind: "oneShot",
@@ -131,6 +132,7 @@ export function loop(def: Base & { start(ctx: BaseAudioContext, dest: AudioNode,
   return {
     id: def.id,
     title: def.title,
+    category: def.category,
     description: def.description,
     params: def.params,
     kind: "loop",

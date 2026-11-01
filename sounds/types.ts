@@ -47,10 +47,14 @@ export interface LoopVoice extends Voice {
   set(values: SoundValues): void;
 }
 
+/** What a sound belongs to, for grouping it in the catalog; the game ignores it. */
+export type SoundCategory = "trains" | "ships" | "water" | "editor";
+
 interface DesignBase {
   /** Permanent once the game plays it: the game names designs by id. */
   id: string;
   title: string;
+  category: SoundCategory;
   /** One line: what it is and where the game plays it. */
   description: string;
   params: SoundParam[];
@@ -74,6 +78,7 @@ export type SoundDesign = OneShotDesign | LoopDesign;
 export interface SoundMeta {
   id: string;
   title: string;
+  category: SoundCategory;
   description: string;
   kind: "oneShot" | "loop";
   params: SoundParam[];

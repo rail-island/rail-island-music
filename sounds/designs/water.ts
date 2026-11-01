@@ -72,6 +72,7 @@ function waterLoop(
 export const riverRapids = loop({
   id: "river-rapids",
   title: "River rapids",
+  category: "water",
   description: "A river running fast over rocks: a rushing bed of water with bubbles and gurgles on top, stronger the steeper and wider the rapid.",
   params: [
     { name: "strength", title: "Strength", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
@@ -124,6 +125,7 @@ export const riverRapids = loop({
 export const waterfall = loop({
   id: "waterfall",
   title: "Waterfall",
+  category: "water",
   description: "Water falling over a lip into a pool: a steady roar, deeper and louder the bigger the fall, with a hiss of spray.",
   params: [
     { name: "size", title: "Size", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
@@ -163,6 +165,7 @@ export const waterfall = loop({
 export const springFountain = loop({
   id: "spring-fountain",
   title: "Spring fountain",
+  category: "water",
   description: "A spring, which the game draws as a fountain: jets splashing back into a basin, a bright patter of droplets over a soft hiss.",
   params: [
     { name: "size", title: "Size", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
