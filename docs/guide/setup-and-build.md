@@ -1,7 +1,7 @@
 # Setup and build
 
 **Covers** - installing, the package scripts, what a build produces, the tests and the headless render tools.
-**Code** - `package.json`, `generator/generate.ts`, `generator/renderAudio.ts`, `generator/renderNotation.ts`, `generator/headless.ts`, `generator/prepareSamples.ts`, `vite.config.ts`, `test/`
+**Code** - `package.json`, `generator/generate.ts`, `generator/renderAudio.ts`, `generator/renderNotation.ts`, `generator/renderSound.ts`, `generator/headless.ts`, `generator/prepareSamples.ts`, `vite.config.ts`, `test/`
 **See also** - [deploy.md](deploy.md), [../music/export.md](../music/export.md)
 
 ## Install
@@ -61,6 +61,15 @@ pnpm exec tsx generator/renderNotation.ts rondo-alla-turca /tmp/turca.png --bars
 OfflineAudioContext and writes WAV or MP3 (ffmpeg). `renderNotation` draws the
 arranged score with abcjs, as the site does. Parameters are `name=value`; any
 not given take the piece's defaults.
+
+A third renders one of the game's sound designs, straight from `sounds/` (no
+`pnpm build:music` needed):
+
+```bash
+pnpm exec tsx generator/renderSound.ts crossing-bell /tmp/bell.mp3 --seconds=6
+```
+
+See [../sounds/sounds.md](../sounds/sounds.md#rendering-a-sound-to-a-file).
 
 ## The sample set
 

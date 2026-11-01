@@ -180,29 +180,68 @@ export const steamChuff = loop({
   },
 });
 
+/**
+ * The electric bell of a level crossing, matched to a recording of a Czech
+ * crossing warning bell (`zvonek vystrazniku`): a main tone near 1.59 kHz with a
+ * strong partial at x1.51 and weak ones at x0.57, x2.08 and x3.08, and a twin of the main tone
+ * a few hertz off so the ring beats about six times a second. A strike barely
+ * decays before the next (about 12 dB in half a second), so the bell rings
+ * continuously, re-struck every half second -- not quite evenly, the hammer's
+ * two strokes alternate long and short. Each partial is one oscillator for the
+ * whole loop, and a strike only re-excites its envelope.
+ */
+export const BELL_PARTIALS: ReadonlyArray<{ ratio: number; level: number; ring: number }> = [
+  // ring: seconds to fall 60 dB
+  { ratio: 0.566, level: 0.13, ring: 3.2 },
+  { ratio: 1, level: 1, ring: 2.8 },
+  { ratio: 1.0038, level: 0.45, ring: 2.8 },
+  { ratio: 1.512, level: 0.6, ring: 2.2 },
+  { ratio: 2.083, level: 0.06, ring: 1.2 },
+  { ratio: 3.078, level: 0.03, ring: 0.9 },
+];
+
+/** Seconds from strike `n` to the next: the hammer's long and short strokes. */
+export function bellGap(n: number, interval: number, uneven: number): number {
+  return interval * (n % 2 === 0 ? 1 - uneven : 1 + uneven);
+}
+
 export const crossingBell = loop({
   id: "crossing-bell",
   title: "Level crossing bell",
-  description: "A level crossing's bell, ringing for as long as its lamps blink.",
+  description: "A level crossing's electric bell, ringing for as long as its lamps blink.",
   params: [
-    { name: "pitch", title: "Pitch", kind: "number", min: 600, max: 2400, step: 10, default: 1350, unit: "Hz" },
-    { name: "interval", title: "Strike every", kind: "number", min: 0.15, max: 1.2, step: 0.01, default: 0.42, unit: "s" },
+    { name: "pitch", title: "Pitch", kind: "number", min: 600, max: 2400, step: 10, default: 1590, unit: "Hz" },
+    { name: "interval", title: "Strike every", kind: "number", min: 0.15, max: 1.2, step: 0.01, default: 0.49, unit: "s" },
+    { name: "uneven", title: "Uneven strokes", kind: "number", min: 0, max: 0.3, step: 0.005, default: 0.085 },
+    { name: "ring", title: "Ring", kind: "number", min: 0.2, max: 2, step: 0.05, default: 1 },
     LEVEL,
   ],
   start(ctx, dest, t, initial) {
-    const out = gain(ctx, num(initial, "level"));
+    const out = gain(ctx, num(initial, "level") * 0.22);
     out.connect(dest);
-    const base = voiceOf(out, [], Infinity);
+    const sources: AudioScheduledSourceNode[] = [];
+    const tones = BELL_PARTIALS.map((p) => {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = num(initial, "pitch") * p.ratio;
+      const g = gain(ctx);
+      osc.connect(g).connect(out);
+      osc.start(t);
+      sources.push(osc);
+      return { osc, g, p };
+    });
+    // The hammer's click, under the ring.
+    const click = noiseSource(ctx, true);
+    const hp = filter(ctx, "highpass", 3000);
+    const cg = gain(ctx);
+    click.connect(hp).connect(cg).connect(out);
+    click.start(t);
+    sources.push(click);
+    const base = voiceOf(out, sources, Infinity);
     let v: SoundValues = initial;
     let next = t;
+    let n = 0;
     let stopped = false;
-    // A bright strike of inharmonic partials.
-    const partials: Array<[number, number]> = [
-      [1, 0.3],
-      [2.76, 0.14],
-      [5.4, 0.07],
-      [8.93, 0.035],
-    ];
     return {
       endsAt: Infinity,
       stop(at) {
@@ -216,18 +255,17 @@ export const crossingBell = loop({
         if (stopped) return;
         if (next < now) next = now;
         while (next < now + horizon) {
-          partials.forEach(([ratio, level], i) => {
-            const osc = ctx.createOscillator();
-            osc.type = "sine";
-            osc.frequency.value = num(v, "pitch") * ratio;
-            const g = gain(ctx);
-            osc.connect(g).connect(out);
-            const decay = 0.45 / (1 + i * 0.7);
-            strike(g.gain, next, level, decay);
-            osc.start(next);
-            osc.stop(next + decay + 0.02);
-          });
-          next += num(v, "interval");
+          const ring = num(v, "ring");
+          for (const { osc, g, p } of tones) {
+            osc.frequency.setValueAtTime(num(v, "pitch") * p.ratio, next);
+            // From wherever it rings now: up to the strike's level, then decay.
+            g.gain.setTargetAtTime(p.level, next, 0.0015);
+            g.gain.setTargetAtTime(0, next + 0.006, (p.ring * ring) / 6.9);
+          }
+          cg.gain.setTargetAtTime(0.25, next, 0.0005);
+          cg.gain.setTargetAtTime(0, next + 0.002, 0.006);
+          next += bellGap(n, num(v, "interval"), num(v, "uneven"));
+          n++;
         }
       },
     };

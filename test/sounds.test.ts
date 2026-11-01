@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SOUNDS, SOUNDS_FORMAT, resolveValues, soundById } from "../sounds/index.ts";
-import { chuffLevel, hornPattern } from "../sounds/designs/trains.ts";
+import { BELL_PARTIALS, bellGap, chuffLevel, hornPattern } from "../sounds/designs/trains.ts";
 import { soundsDeclarations, soundsMeta } from "../generator/sounds.ts";
 import type { SoundDesign, SoundValues } from "../sounds/types.ts";
 
@@ -23,6 +23,7 @@ function stubContext() {
       if (!(v > 0)) throw new RangeError("exponential ramp to a non-positive value");
     },
     cancelScheduledValues: () => {},
+    setTargetAtTime: () => {},
   });
   const node = (what: string) => ({
     connect: (to: unknown) => to,
@@ -132,17 +133,44 @@ describe("the loops", () => {
     expect(strikes).toHaveLength(4);
   });
 
-  it("ring a crossing bell at its interval, and stop ringing once stopped", () => {
+  it("ring a crossing bell on its uneven strokes, from oscillators that run for the whole loop", () => {
     const { ctx, dest, starts } = stubContext();
+    const strikes: number[] = [];
+    const spy = ctx as unknown as { createGain: () => { gain: Record<string, unknown> } };
+    const make = spy.createGain;
+    spy.createGain = () => {
+      const g = make();
+      g.gain.setTargetAtTime = (v: number, at: number) => {
+        if (v === BELL_PARTIALS[1]!.level) strikes.push(Number(at.toFixed(4)));
+      };
+      return g;
+    };
     const bell = soundById("crossing-bell")!;
     if (bell.kind !== "loop") throw new Error("crossing-bell is a loop");
-    const voice = bell.start(ctx, dest, 0, { interval: 0.5 });
-    voice.tick(0, 1);
-    const strikes = [...new Set(starts.filter((s) => s.what === "osc").map((s) => s.at))];
-    expect(strikes).toEqual([0, 0.5]);
-    voice.stop(1);
-    voice.tick(1, 1);
-    expect(starts.filter((s) => s.what === "osc" && s.at >= 1)).toEqual([]);
+    const voice = bell.start(ctx, dest, 0, { interval: 0.5, uneven: 0.1 });
+    const oscillators = starts.filter((s) => s.what === "osc").length;
+    expect(oscillators).toBe(BELL_PARTIALS.length);
+    voice.tick(0, 1.2);
+    // the main partial is re-struck on the hammer's short and long strokes
+    expect(strikes).toEqual([0, 0.45, 1.0]);
+    voice.stop(1.5);
+    voice.tick(1.5, 1);
+    expect(strikes).toHaveLength(3);
+    // a strike re-excites the running partials: no new oscillator per strike
+    expect(starts.filter((s) => s.what === "osc")).toHaveLength(oscillators);
+  });
+
+  it("match the recorded bell: a main tone near 1.59 kHz, its x1.51 partial next, and a beating twin", () => {
+    const pitch = soundById("crossing-bell")!.params.find((p) => p.name === "pitch")!;
+    expect(pitch.default).toBe(1590);
+    const byLevel = [...BELL_PARTIALS].sort((a, b) => b.level - a.level);
+    expect(byLevel[0]!.ratio).toBe(1);
+    expect(byLevel.find((p) => p.ratio > 1.4)!.ratio).toBeCloseTo(1.51, 2);
+    const twin = BELL_PARTIALS.find((p) => p.ratio > 1 && p.ratio < 1.01)!;
+    expect(1590 * (twin.ratio - 1)).toBeGreaterThan(3);
+    expect(1590 * (twin.ratio - 1)).toBeLessThan(10);
+    expect(bellGap(0, 0.49, 0.085) + bellGap(1, 0.49, 0.085)).toBeCloseTo(0.98, 6);
+    expect(bellGap(0, 0.49, 0.085)).toBeLessThan(bellGap(1, 0.49, 0.085));
   });
 });
 

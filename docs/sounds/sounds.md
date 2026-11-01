@@ -6,7 +6,7 @@ document covers the contract a design implements, the designs and their
 parameters, the export the game imports, and the Sounds page that auditions them.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
 `sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/editor.ts`,
-`generator/sounds.ts`, `src/SoundsPage.tsx`, `test/sounds.test.ts`
+`generator/sounds.ts`, `generator/renderSound.ts`, `src/SoundsPage.tsx`, `test/sounds.test.ts`
 **See also** - [../music/export.md](../music/export.md),
 [../site/catalog-site.md](../site/catalog-site.md); in the game,
 `rail-island-webapp` `docs/gameplay/sounds.md` (when each sound plays) and
@@ -56,10 +56,32 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `loco-horn` | one-shot | `pitch` 150-500 Hz, `call`, `level` | the two-tone air horn of a diesel, an electric or a multiple unit: a three-reed sawtooth chord (root, major third, fifth) through a soft low-pass |
 | `steam-whistle` | one-shot | `pitch` 400-1100 Hz, `call`, `level` | a steam locomotive's whistle: three sine pipes sliding up onto the note, over band-passed noise |
 | `steam-chuff` | loop | `rate` 0-12 beats/s, `intensity` 0..1, `level` | the exhaust beat: looped noise through a band-pass, gated by one struck envelope per beat; every fourth beat heavier; loudness `0.3 + 0.7 * intensity` |
-| `crossing-bell` | loop | `pitch` 600-2400 Hz, `interval` 0.15-1.2 s, `level` | a level crossing's bell: four inharmonic sine partials (1, 2.76, 5.4, 8.93) struck every `interval` |
+| `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit |
 | `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit |
+
+**The crossing bell** was matched to a recording of a Czech level crossing's
+warning bell (`zvonek vystrazniku`), measured for its partials, ring and timing:
+
+| Partial | Ratio to `pitch` | Level | Rings (s to -60 dB) |
+|---|---|---|---|
+| low | 0.566 (900 Hz) | 0.13 (-18 dB) | 3.2 |
+| main | 1 (1590 Hz) | 1 | 2.8 |
+| main's twin | 1.0038 (+6 Hz, the beat) | 0.45 | 2.8 |
+| fifth-ish | 1.512 (2404 Hz) | 0.6 (-4 dB) | 2.2 |
+| upper | 2.083, 3.078 | 0.06, 0.03 | 1.2, 0.9 |
+
+- **Ring.** A strike barely decays before the next one: about 12 dB in half a
+  second. The bell therefore rings continuously, and the twin beats it about six
+  times a second.
+- **Strokes.** The hammer's strokes alternate short and long, `interval` x
+  (1 - `uneven`) then x (1 + `uneven`), which gives 0.45 s and 0.53 s at the
+  defaults (`bellGap`).
+- **Click.** A strike adds a short high-passed click of the hammer.
+- **Oscillators.** Each partial is one oscillator for the whole loop. A strike
+  only re-excites its envelope (`setTargetAtTime` from wherever it rings), so a
+  bell costs seven sources however long it rings. `ring` scales every ring time.
 
 **The calls** (`call`, `hornPattern`) are why a train sounds. Each is a pattern
 of blasts:
@@ -90,6 +112,20 @@ import refuses a format it does not know. The game runs
 `pnpm import:sounds`, which builds this repository and mirrors `export/sounds/`
 into its committed `db/sounds/`.
 
+## Rendering a sound to a file
+
+```bash
+pnpm exec tsx generator/renderSound.ts crossing-bell /tmp/bell.mp3 interval=0.5 --seconds=6
+```
+
+`generator/renderSound.ts` renders one design through the very code the game
+imports. A one-shot plays once at 0; a loop starts at 0 and is ticked for the
+whole length. It writes WAV or MP3 (ffmpeg), at 44.1 kHz, through headless
+Chromium's `OfflineAudioContext` (Playwright's, pre-installed in the cloud
+sessions). Parameters are `name=value`: a number is parsed as one, anything else
+is a choice. Use it to compare a design with a reference recording, or to send
+someone a sound.
+
 ## The Sounds page (`?sounds`)
 
 `src/SoundsPage.tsx`: one card per design, in `SOUNDS` order. Each card has:
@@ -109,8 +145,11 @@ press.
 `test/sounds.test.ts`, over a stub Web Audio context:
 - every design is well formed and includes each id the game plays;
 - it plays at its defaults and at both ends of every range;
-- the beat and the bell schedule only as far ahead as asked, at their rate, and
-  stop when stopped;
+- the beat schedules only as far ahead as asked, at its rate; the bell strikes
+  on its uneven strokes from oscillators that run for the whole loop, and stops
+  when stopped;
+- the bell keeps the measured shape of the recording (main tone, the x1.51
+  partial, the beating twin);
 - values are resolved as described;
 - the call patterns hold;
 - the export lists every design and `types.ts` stays types only.
