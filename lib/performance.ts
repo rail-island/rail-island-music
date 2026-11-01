@@ -24,6 +24,12 @@ export interface Track {
    * percussion numbers as the pitch.
    */
   notes: number[];
+  /**
+   * Rolled chords (harp chords), for the notation only: [written tick, ticks
+   * from the lowest note's onset to the highest's]. The notes already sound
+   * rolled; absent when the track has none.
+   */
+  rolls?: [number, number][];
 }
 
 export interface Performance {

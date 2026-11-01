@@ -22,7 +22,12 @@ export interface ScoreNote {
   pitch: number;
   staccato: boolean;
   accent: boolean;
+  /** Ticks after `start` the note sounds, in a rolled chord (`!arpeggio!`); absent when 0. */
+  roll?: number;
 }
+
+/** Ticks between the notes of a rolled chord, from the lowest up: a quick harp roll. */
+export const ROLL_STEP = 40;
 
 export interface ScoreBar {
   /** Written length in ticks (short for a pickup or the bar that completes it). */
@@ -110,6 +115,7 @@ interface RawNote {
   staccato: boolean;
   accent: boolean;
   tie: boolean;
+  roll: number;
 }
 
 interface RawBar {
@@ -314,6 +320,7 @@ class Cursor {
   pendingChord: Chord | null = null;
   pendingStaccato = false;
   pendingAccent = false;
+  pendingArpeggio = false;
   pendingStartRepeat = false;
   currentEnding: number[] | null = null;
   tuplet: { factor: number; left: number } | null = null;
@@ -453,8 +460,12 @@ function parseMusicLine(
     }
     const notes: RawNote[] = [];
     if (!rest) {
+      // A rolled chord sounds from its lowest note up, each note held to the chord's end.
+      const step = c.pendingArpeggio ? Math.min(ROLL_STEP, Math.floor(dur / pitches.length)) : 0;
+      const order = [...pitches].sort((a, b) => a - b);
       pitches.forEach((p, k) => {
-        const n: RawNote = { start: c.pos, dur, pitch: p, staccato: c.pendingStaccato, accent: c.pendingAccent, tie: tiesPer[k]! };
+        const roll = step * order.indexOf(p);
+        const n: RawNote = { start: c.pos, dur, pitch: p, staccato: c.pendingStaccato, accent: c.pendingAccent, tie: tiesPer[k]!, roll };
         c.vp.notes.push(n);
         notes.push(n);
       });
@@ -462,6 +473,7 @@ function parseMusicLine(
     tieTarget.notes = notes;
     c.pendingStaccato = false;
     c.pendingAccent = false;
+    c.pendingArpeggio = false;
     c.pos += dur;
     if (c.tuplet && --c.tuplet.left === 0) c.tuplet = null;
   };
@@ -489,6 +501,7 @@ function parseMusicLine(
       const deco = text.slice(i + 1, end);
       if (deco === "staccato") c.pendingStaccato = true;
       if (deco === "accent" || deco === ">") c.pendingAccent = true;
+      if (deco === "arpeggio") c.pendingArpeggio = true;
       i = end + 1;
       continue;
     }
@@ -690,7 +703,9 @@ function assemblePart(name: string, byVoice: Map<string, VoicePart>, voices: Voi
     for (const n of vp.notes) {
       const k = barIndexAt(n.start);
       const b = vp.bars[k]!;
-      bars[k]!.voices[v.id]!.push({ start: n.start - b.start, dur: n.dur, pitch: n.pitch, staccato: n.staccato, accent: n.accent });
+      const note: ScoreNote = { start: n.start - b.start, dur: n.dur, pitch: n.pitch, staccato: n.staccato, accent: n.accent };
+      if (n.roll > 0) note.roll = n.roll;
+      bars[k]!.voices[v.id]!.push(note);
     }
     for (const ch of vp.chords) {
       const k = barIndexAt(ch.at);

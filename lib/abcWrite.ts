@@ -17,6 +17,8 @@ interface Segment {
   len: number;
   pitches: number[];
   tieOut: boolean;
+  /** The segment starts a rolled chord. */
+  rolled?: boolean;
 }
 
 export interface WriteOptions {
@@ -122,22 +124,25 @@ function chordsIn(perf: Performance, start: number, end: number): { at: number; 
 /** Cut a track into per-bar segments that cover each bar completely (rests fill the gaps). */
 function segmentTrack(track: Track, perf: Performance, splitAt: number[]): Segment[][] {
   // Group notes by onset; a group lasts until its shortest note ends or the next onset.
-  const onsets = new Map<number, { pitches: number[]; dur: number }>();
+  // A rolled chord's notes are written together, at the chord's tick.
+  const onsets = new Map<number, { pitches: number[]; dur: number; rolled: boolean }>();
+  const rolls = track.rolls ?? [];
   const n = track.notes;
   for (let i = 0; i < n.length; i += 4) {
-    const at = quantize(n[i]!);
-    const g = onsets.get(at) ?? { pitches: [], dur: Infinity };
+    const roll = rolls.find(([at, span]) => n[i]! >= at && n[i]! <= at + span);
+    const at = quantize(roll ? roll[0] : n[i]!);
+    const g = onsets.get(at) ?? { pitches: [], dur: Infinity, rolled: !!roll };
     if (!g.pitches.includes(n[i + 2]!)) g.pitches.push(n[i + 2]!);
-    g.dur = Math.min(g.dur, n[i + 1]!);
+    g.dur = Math.min(g.dur, n[i + 1]! + (roll ? n[i]! - roll[0] : 0));
     onsets.set(at, g);
   }
   const ticks = [...onsets.keys()].sort((a, b) => a - b);
-  const events: { at: number; end: number; pitches: number[] }[] = [];
+  const events: { at: number; end: number; pitches: number[]; rolled: boolean }[] = [];
   ticks.forEach((t, k) => {
     const g = onsets.get(t)!;
     const next = ticks[k + 1] ?? perf.length;
     const end = Math.min(next, perf.length, t + Math.max(quantize(g.dur), 30));
-    events.push({ at: t, end, pitches: g.pitches.sort((a, b) => a - b) });
+    events.push({ at: t, end, pitches: g.pitches.sort((a, b) => a - b), rolled: g.rolled });
   });
 
   const cuts = new Set<number>([...perf.bars, perf.length, ...splitAt]);
@@ -164,7 +169,7 @@ function segmentTrack(track: Track, perf: Performance, splitAt: number[]): Segme
     let t = e.at;
     while (t < e.end) {
       const stop = Math.min(e.end, sortedCuts.find((c) => c > t) ?? e.end);
-      bars[barIndex(t)]!.push({ at: t, len: stop - t, pitches: e.pitches, tieOut: stop < e.end });
+      bars[barIndex(t)]!.push({ at: t, len: stop - t, pitches: e.pitches, tieOut: stop < e.end, rolled: e.rolled && t === e.at });
       t = stop;
     }
     cursor = Math.max(cursor, e.end);
@@ -188,7 +193,7 @@ function writeBar(segments: Segment[], key: Key, perc: boolean, chords: { at: nu
   while (i < segments.length) {
     const s = segments[i]!;
     const chord = chords.find((c) => c.at === s.at - barStart);
-    const prefix = chord ? `"${chord.symbol}"` : "";
+    const prefix = (chord ? `"${chord.symbol}"` : "") + (s.rolled && s.pitches.length > 1 ? "!arpeggio!" : "");
     // A run of three equal non-dyadic lengths is a triplet.
     if (!isDyadic(s.len)) {
       const run = segments.slice(i, i + 3);

@@ -84,6 +84,15 @@ describe("jingles", () => {
       expect(new Set(roll.map((n) => n.start)).size, `bar ${i + 1}`).toBe(3);
     }
     expect(firstBeat(3).map((n) => n.start)).toEqual([0, 0]);
+    // The right hand rolls its chord up to the melody's B: D-F#-A, C#-F#-A, C-F#-A.
+    const rolled = (i: number) =>
+      bars[i]!.voices.mel!.filter((n) => n.start === 0).sort((a, b) => (a.roll ?? 0) - (b.roll ?? 0)).map((n) => n.pitch);
+    expect([0, 1, 2].map(rolled)).toEqual([
+      [62, 66, 69, 71],
+      [61, 66, 69, 71],
+      [60, 66, 69, 71],
+    ]);
+    expect(bars[3]!.voices.mel!.some((n) => n.roll)).toBe(false);
   });
 
   it("list the default arrangement's facts for the site", () => {

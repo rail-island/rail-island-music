@@ -44,7 +44,7 @@ so solo piano plays exactly what was recorded.
 
 | Jingle | Key | What it is |
 |---|---|---|
-| `jingle-1` | D, 3/4 | harp chords D, D/C#, D/C under B-A-F#-G, a plain G/B with a run up to D, then D, A7 and a rising D arpeggio to the close |
+| `jingle-1` | D, 3/4 | harp chords D, D/C#, D/C (the right hand rolls D-F#-A, C#-F#-A, C-F#-A up to the melody's B, the left hand rolls up from the bass) under B-A-F#-G, a plain G/B with a run up to D, then D, A7 and a rising D arpeggio to the close |
 
 ## Parameters and arranging
 
@@ -80,5 +80,5 @@ pnpm exec tsx generator/renderAudio.ts jingle-1 /tmp/j1.mp3 ensemble=chiptune
 - each lasts 1.5-15 s and at most 8 bars, played once;
 - every ensemble, tempo and key arranges within the samples;
 - `jingle-1` keeps the recording's chords, with rolled harp chords in bars 1-3
-  and a plain G/B in bar 4;
+  (both hands) and a plain G/B in bar 4;
 - the site's list entry.

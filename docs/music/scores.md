@@ -68,7 +68,10 @@ Body:
   `:|2`;
 - inline fields `[K:...]`, `[M:...]`, `[Q:...]`, `[L:...]`, or the same as
   body lines; a key change applies to the voice it is written in;
-- `.` and `!staccato!` shorten a note; `!accent!` accents it; grace notes
+- `.` and `!staccato!` shorten a note; `!accent!` accents it;
+  `!arpeggio!` rolls the chord after it like a harp: its notes sound from the
+  lowest up, `ROLL_STEP` (40) ticks apart, each held to the chord's end
+  (`ScoreNote.roll`); grace notes
   `{...}`, slurs, other decorations and `%` comments are skipped.
 
 A short first bar of a part is a pickup: it is played with the bar that closes

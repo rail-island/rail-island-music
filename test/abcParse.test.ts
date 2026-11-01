@@ -36,6 +36,18 @@ describe("parseAbc", () => {
     expect(bars[2]).toEqual([]);
   });
 
+  it("rolls an !arpeggio! chord from its lowest note up, each note held to the chord's end", () => {
+    const s = tune("!arpeggio![GEC]2 [CE]2 !arpeggio!C2 z2 |");
+    const notes = s.parts[""]!.bars[0]!.voices["1"]!;
+    expect(notes.slice(0, 3).map((n) => [n.pitch, n.start, n.dur, n.roll])).toEqual([
+      [67, 0, 480, 80],
+      [64, 0, 480, 40],
+      [60, 0, 480, undefined],
+    ]);
+    // Only the chord it decorates; a single note has nothing to roll.
+    expect(notes.slice(3).every((n) => n.roll === undefined)).toBe(true);
+  });
+
   it("reads triplets and broken rhythm", () => {
     const s = tune("(3CDE C>D C<D z2 |");
     expect(melody(s)[0]!.map((n) => n[1])).toEqual([160, 160, 160, 360, 120, 120, 360]);

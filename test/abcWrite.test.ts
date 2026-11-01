@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { parseAbc } from "../lib/abcParse.ts";
 import { writeAbc } from "../lib/abcWrite.ts";
 import { arrange } from "../lib/arrange.ts";
+import { jingleAsPiece } from "../lib/jingles.ts";
 import { loadPieces } from "../generator/scores.ts";
+import { loadJingles } from "../generator/jingles.ts";
 
 const pieces = loadPieces();
 
@@ -29,5 +31,26 @@ describe("writeAbc", () => {
         }
       });
     }
+  }
+
+  // A rolled chord sounds note after note but is written as one chord with
+  // !arpeggio!, and reads back to the same sounding onsets.
+  for (const j of loadJingles()) {
+    it(`round-trips ${j.meta.id}, its harp chords rolled`, () => {
+      const { piece, params } = jingleAsPiece(j.meta, j.meta.defaults);
+      const perf = arrange(piece, j.score, params);
+      const abc = writeAbc(perf);
+      const back = parseAbc(abc).parts[""]!.bars;
+      for (const t of perf.tracks) {
+        const want = new Set<string>();
+        for (let i = 0; i < t.notes.length; i += 4) want.add(`${t.notes[i]}:${t.notes[i + 2]}`);
+        const got = new Set<string>();
+        back.forEach((b, k) => {
+          for (const n of b.voices[t.id] ?? []) got.add(`${perf.bars[k]! + n.start + (n.roll ?? 0)}:${n.pitch}`);
+        });
+        expect([...got].sort(), t.id).toEqual([...want].sort());
+      }
+      if (j.meta.id === "jingle-1") expect(abc.match(/!arpeggio!/g)?.length).toBe(3);
+    });
   }
 });

@@ -31,12 +31,15 @@
 | `bars` | start tick of every bar, repeats written out |
 | `chords` | `[tick, symbol]`, transposed |
 | `length`, `duration` | end in ticks; length in seconds |
-| `tracks` | per line: `id` (melody, harmony, chords, bass, drums), `name`, `instrument`, `clef`, `gain`, `pan`, `notes` |
+| `tracks` | per line: `id` (melody, harmony, chords, bass, drums), `name`, `instrument`, `clef`, `gain`, `pan`, `notes`, and `rolls` when the line has rolled chords |
 
 `notes` is a flat array of quadruples `[tick, duration ticks, MIDI pitch,
 velocity 1..127]`, sorted by tick then pitch; drums use General MIDI
 percussion numbers (36 bass drum, 38 snare, 42 closed hi-hat, 49 crash, 51
-ride). Times are on a straight grid: `tickToSeconds(perf, tick)` applies the
+ride). A rolled chord (`!arpeggio!`, [scores.md](scores.md)) is already
+rolled in `notes`: each note starts later and ends with the chord. `rolls`
+(`[written tick, span ticks]`, optional) only lets the arranged score write
+it back as one chord with `!arpeggio!`. Times are on a straight grid: `tickToSeconds(perf, tick)` applies the
 tempo map and the swing, the same way in the synth and the site. A default
 arrangement is 20-80 kB.
 

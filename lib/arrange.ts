@@ -93,6 +93,8 @@ interface Timed {
   dur: number;
   pitch: number;
   vel: number;
+  /** Ticks after `tick` the note sounds, in a rolled chord. */
+  roll?: number;
 }
 
 interface BarInfo {
@@ -184,10 +186,17 @@ export function arrange(piece: PieceMeta, score: Score, params: Params): Perform
     let notes = lines[t.role];
     if (notes.length === 0) continue;
     if (t.role !== "drums") notes = fitRange(notes, t.range);
+    // A rolled note sounds late and ends with its chord; the written chord is kept in `rolls`.
+    const rolls = new Map<number, number>();
+    const sounding = notes.map((n) => {
+      if (!n.roll) return n;
+      rolls.set(n.tick, Math.max(rolls.get(n.tick) ?? 0, n.roll));
+      return { ...n, tick: n.tick + n.roll, dur: n.dur - n.roll };
+    });
     const flat: number[] = [];
-    const sorted = [...notes].sort((a, b) => a.tick - b.tick || a.pitch - b.pitch);
+    const sorted = sounding.sort((a, b) => a.tick - b.tick || a.pitch - b.pitch);
     for (const n of sorted) flat.push(n.tick, Math.max(1, Math.round(n.dur)), n.pitch, clampVel(n.vel * t.velocity));
-    tracks.push({
+    const track: Track = {
       id: t.role,
       name: t.name,
       instrument: t.instrument,
@@ -195,7 +204,9 @@ export function arrange(piece: PieceMeta, score: Score, params: Params): Perform
       gain: t.gain,
       pan: t.pan,
       notes: flat,
-    });
+    };
+    if (rolls.size > 0) track.rolls = [...rolls].sort((a, b) => a[0] - b[0]);
+    tracks.push(track);
   }
 
   const tempos: [number, number][] = [];
@@ -232,7 +243,9 @@ export function arrange(piece: PieceMeta, score: Score, params: Params): Perform
 
 function toTimed(n: ScoreNote, b: BarInfo, shift: number): Timed {
   const dur = n.staccato ? Math.max(PPQ / 8, n.dur / 2) : n.dur;
-  return { tick: b.start + n.start, dur, pitch: n.pitch + shift, vel: n.accent ? 112 : n.start === 0 ? 100 : 92 };
+  const t: Timed = { tick: b.start + n.start, dur, pitch: n.pitch + shift, vel: n.accent ? 112 : n.start === 0 ? 100 : 92 };
+  if (n.roll && n.roll < dur) t.roll = n.roll;
+  return t;
 }
 
 function clampVel(v: number): number {

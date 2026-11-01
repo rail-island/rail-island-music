@@ -10,9 +10,11 @@ recording polished, not rewritten:
 
 - 3/4 in D, eight bars: D, D/C#, D/C, G/B, D, A7, D, D (the chord names are the
   user's).
-- Bars 1-3 are harp chords: the left hand rolls up from the bass (D-A-D-F#-D-A,
-  then the same over C# and C), under a held right-hand D/F#, C#, C. Bar 4 (G/B)
-  has no harp chord: a plain B octave, then B-D-G and B.
+- Bars 1-3 are harp chords: the right hand rolls D-F#-A quickly up to the
+  melody's B (`!arpeggio!`), then C#-F#-A and C-F#-A the same way (the
+  recording has C#-A and C-A there; the F# follows bar 1, as the user asked).
+  The left hand rolls up from the bass (D-A-D-F#-D-A, then the same over C#
+  and C). Bar 4 (G/B) has no harp chord: a plain B octave, then B-D-G and B.
 - The melody B-A-F#-G, twice, then B-A over F#/A; a G-A-B run up to D; then
   G-F#-D-F#, E-E-D-C# and a rising D arpeggio to the closing D chord.
 - Polished: quantized to eighths on one steady tempo (the recording rushes
