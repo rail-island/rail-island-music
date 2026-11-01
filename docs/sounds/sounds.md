@@ -58,7 +58,7 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `steam-whistle` | one-shot | `pitch` 400-1100 Hz, `call`, `level` | a steam locomotive's whistle: three sine pipes sliding up onto the note, over band-passed noise |
 | `steam-chuff` | loop | `rate` 0-12 beats/s, `intensity` 0..1, `level` | the exhaust beat: looped noise through a band-pass, gated by one struck envelope per beat; every fourth beat heavier; loudness `0.3 + 0.7 * intensity` |
 | `diesel-engine` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `engine` (`mainline`), `level` | a running diesel of one of six profiles (railcar, shunter, mainline V12, two-stroke V16, bus, truck), matched to recordings: a cycle wave of its cylinders' uneven pulses, the knock and the exhaust's breath gated in step, a turbo and, for the truck, a fan ([diesel.md](diesel.md)) |
-| `diesel-start` | one-shot | `size`, `engine`, `level` | the engine started: the starter cranks, it coughs and catches, flares and settles to idle, fading out as the game starts `diesel-engine` ([diesel.md](diesel.md)) |
+| `diesel-start` | one-shot | `size`, `engine`, `level` | the engine started: silent until it coughs (no starter), then it catches, flares and settles to idle, fading out as the game starts `diesel-engine` ([diesel.md](diesel.md)) |
 | `diesel-stop` | one-shot | `size`, `engine`, `level` | the engine shut down from idle: it runs down through its compressions, rocks to a stop, the turbo spins down ([diesel.md](diesel.md)) |
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
@@ -252,7 +252,7 @@ press. Leaving the page stops everything it still plays, one-shots included.
 - the water's output stays trimmed under the engines, and the woods under the water;
 - the diesel profiles are every `engine` choice, idle and run at their
   measured speeds, draw a cycle whose strongest line is the firing order with
-  the lines of their unevenness, start after cranking and stop after running
+  the lines of their unevenness, start silent until they cough, with no starter, and stop after running
   down, and change engine while running;
 - the diesel fires faster as it revs and lower the bigger it is, and schedules
   only as far ahead as asked;

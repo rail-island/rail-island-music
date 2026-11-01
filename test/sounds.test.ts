@@ -362,19 +362,32 @@ describe("the diesel profiles", () => {
     expect(cycleShape(DIESEL_PROFILES.truck, 0.3, 1)).toEqual(cycleShape(DIESEL_PROFILES.truck, 0.3, 1));
   });
 
-  it("start by cranking before they catch, and end once settled at idle", () => {
+  it("start with the engine itself, no starter: silent until it coughs, ending once settled at idle", () => {
     for (const e of engines) {
       const { catches, idles, ends } = dieselStartTimes(e);
-      expect(catches, e).toBeGreaterThan(0.5);
+      expect(catches, e).toBeGreaterThan(0);
       expect(idles).toBeGreaterThan(catches);
       expect(ends).toBeGreaterThan(idles);
       const d = soundById("diesel-start")!;
       if (d.kind !== "oneShot") throw new Error("diesel-start is a one-shot");
       const { ctx, dest } = stubContext();
+      const types: string[] = [];
+      const spy = ctx as unknown as { createOscillator: () => { type: string } };
+      const make = spy.createOscillator;
+      spy.createOscillator = () => {
+        const o = make();
+        return new Proxy(o, {
+          set(target, key, value) {
+            if (key === "type") types.push(value as string);
+            (target as Record<string | symbol, unknown>)[key] = value;
+            return true;
+          },
+        });
+      };
       expect(d.play(ctx, dest, 2, { engine: e }).endsAt).toBeCloseTo(2 + ends);
+      // the starter motor was a sawtooth; the engine's own oscillators are periodic waves and a sine turbo
+      expect(types, e).not.toContain("sawtooth");
     }
-    // a big engine cranks longer than a bus
-    expect(dieselStartTimes("mainline").catches).toBeGreaterThan(dieselStartTimes("bus").catches);
   });
 
   it("stop by running down after the fuel is cut, the turbo spinning on", () => {

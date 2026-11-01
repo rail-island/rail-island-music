@@ -39,10 +39,6 @@ export interface DieselProfile {
   turbo: [number, number, number];
   /** An air-cooled engine's fan: band-passed noise level (0: none). */
   fan: number;
-  /** Seconds the starter cranks before the engine catches. */
-  crank: number;
-  /** The starter motor's whine, Hz. */
-  starter: number;
   /** Seconds it takes to run down once the fuel is cut. */
   rundown: number;
   /** The output trim, so every profile runs at about the same loudness. */
@@ -64,8 +60,6 @@ export const DIESEL_PROFILES = {
     breath: 0.8,
     turbo: [2400, 5200, 0.012],
     fan: 0,
-    crank: 1.4,
-    starter: 150,
     rundown: 1.6,
     trim: 1.24,
   },
@@ -83,8 +77,6 @@ export const DIESEL_PROFILES = {
     breath: 0.9,
     turbo: [1800, 4200, 0.014],
     fan: 0,
-    crank: 2.2,
-    starter: 110,
     rundown: 2.6,
     trim: 1.26,
   },
@@ -102,8 +94,6 @@ export const DIESEL_PROFILES = {
     breath: 1.0,
     turbo: [1500, 3800, 0.03],
     fan: 0,
-    crank: 2.8,
-    starter: 95,
     rundown: 3.4,
     trim: 1,
   },
@@ -121,8 +111,6 @@ export const DIESEL_PROFILES = {
     breath: 1.1,
     turbo: [1200, 3400, 0.04],
     fan: 0,
-    crank: 3.2,
-    starter: 85,
     rundown: 4,
     trim: 0.84,
   },
@@ -140,8 +128,6 @@ export const DIESEL_PROFILES = {
     breath: 0.7,
     turbo: [2800, 6200, 0.01],
     fan: 0,
-    crank: 1.3,
-    starter: 170,
     rundown: 1.2,
     trim: 1.3,
   },
@@ -159,8 +145,6 @@ export const DIESEL_PROFILES = {
     breath: 0.7,
     turbo: [0, 0, 0],
     fan: 0.25,
-    crank: 1.2,
-    starter: 180,
     rundown: 1.1,
     trim: 1.33,
   },
@@ -305,7 +289,7 @@ interface EngineState {
   revs: number;
   /** 0..1. */
   load: number;
-  /** 0: turned without fuel (cranking, running down); 1: firing. */
+  /** 0: turned without fuel (between coughs, running down); 1: firing. */
   fire: number;
   /** The turbo's speed, 0..1 (it lags the engine). */
   turbo: number;
@@ -505,49 +489,18 @@ export const dieselEngine = /* @__PURE__ */ loop({
   },
 });
 
-/** The start's moments, seconds after it begins: the engine catches, and the sound has handed over to the loop. */
-export function dieselStartTimes(engine: string): { catches: number; idles: number; ends: number } {
-  const p = dieselProfile(engine);
-  const catches = p.crank;
+/** How long the engine coughs before it catches: the start begins with the first cough. */
+const COUGHING = 0.5;
+
+/**
+ * The start's moments, seconds after it begins: the engine catches, and the
+ * sound has handed over to the loop. The same for every engine: there is no
+ * starter and no cranking to hear, only the engine coming to life.
+ */
+export function dieselStartTimes(_engine: string): { catches: number; idles: number; ends: number } {
+  const catches = COUGHING;
   const idles = catches + 1.8;
   return { catches, idles, ends: idles + 0.6 };
-}
-
-/** A starter motor: a geared whine, slowed by every compression. */
-function starterMotor(ctx: BaseAudioContext, dest: AudioNode, t: number, p: DieselProfile, revs: number, until: number): AudioScheduledSourceNode[] {
-  const motor = ctx.createOscillator();
-  motor.type = "sawtooth";
-  const lp = filter(ctx, "lowpass", 1400, 0.7);
-  const g = gain(ctx);
-  motor.connect(lp).connect(g).connect(dest);
-  motor.frequency.setValueAtTime(p.starter * 0.4, t);
-  motor.frequency.setTargetAtTime(p.starter, t, 0.12);
-  // Every compression drags the motor down a little: a wobble at the firing rate.
-  const drag = ctx.createOscillator();
-  drag.type = "sine";
-  drag.frequency.value = cycleRate(p, revs) * p.cylinders;
-  const dragDepth = gain(ctx, p.starter * 0.08);
-  drag.connect(dragDepth).connect(motor.frequency);
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(0.05, t + 0.04);
-  g.gain.setValueAtTime(0.05, until);
-  g.gain.setTargetAtTime(0, until, 0.08);
-  motor.frequency.setTargetAtTime(p.starter * 1.4, until, 0.05);
-  // The pinion's clack as it engages.
-  const clack = noiseSource(ctx, false);
-  const bp = filter(ctx, "bandpass", 2600, 1.2);
-  const cg = gain(ctx);
-  clack.connect(bp).connect(cg).connect(dest);
-  cg.gain.setValueAtTime(0, t);
-  cg.gain.linearRampToValueAtTime(0.25, t + 0.002);
-  cg.gain.setTargetAtTime(0, t + 0.004, 0.012);
-  for (const s of [motor, drag]) {
-    s.start(t);
-    s.stop(until + 0.6);
-  }
-  clack.start(t, 0.3);
-  clack.stop(t + 0.15);
-  return [motor, drag, clack];
 }
 
 export const dieselStart = /* @__PURE__ */ oneShot({
@@ -555,7 +508,7 @@ export const dieselStart = /* @__PURE__ */ oneShot({
   title: "Diesel engine start",
   category: "trains",
   description:
-    "A diesel being started: the starter cranks it over, it coughs and catches, flares and settles to idle. The game starts `diesel-engine` at idle as this one fades out.",
+    "A diesel being started: silent until it coughs, then it catches, flares and settles to idle. The game starts `diesel-engine` at idle as this one fades out.",
   params: [SIZE, ENGINE, LEVEL],
   play(ctx, dest, t, v) {
     const name = choice(v, "engine");
@@ -564,19 +517,17 @@ export const dieselStart = /* @__PURE__ */ oneShot({
     out.connect(dest);
     const engine = buildEngine(ctx, out, t, p);
     const idle = dieselRpm(name, num(v, "size"), 0);
-    const crankRevs = Math.min(220, idle * 0.45);
+    const coughRevs = Math.min(220, idle * 0.45);
     const { catches, idles, ends } = dieselStartTimes(name);
-    const sources = [...engine.sources, ...starterMotor(ctx, out, t, p, crankRevs, t + catches + 0.25)];
-    // Cranking: turned over without fuel, a little faster as the oil warms.
-    engine.drive(t, { revs: crankRevs * 0.7, load: 0, fire: 0, turbo: 0 }, 0.15);
-    engine.drive(t + 0.4, { revs: crankRevs, load: 0, fire: 0, turbo: 0 }, 0.4);
-    // Catching: a few cylinders fire, then more, unevenly.
+    const sources = [...engine.sources];
+    // No starter and no cranking (silence until the first cough): a few
+    // cylinders fire, then more, unevenly, as it catches.
     const rnd = seeded(p.cylinders * 31 + p.idleRpm);
     const coughs = 6;
     for (let i = 0; i < coughs; i++) {
-      const at = t + catches - 0.5 + (i * 0.5) / coughs;
+      const at = t + (i * COUGHING) / coughs;
       const fire = i % 2 === 0 ? 0.3 + 0.5 * rnd() : 0.05;
-      engine.drive(at, { revs: crankRevs * (1 + i * 0.12), load: 0.3, fire, turbo: 0 }, 0.03);
+      engine.drive(at, { revs: coughRevs * (1 + i * 0.12), load: 0.3, fire, turbo: 0 }, 0.03);
     }
     // It catches and flares past idle, then the governor pulls it back.
     engine.drive(t + catches, { revs: idle * 1.45, load: 0.6, fire: 1, turbo: 0.3 }, 0.22);

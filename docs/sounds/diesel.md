@@ -14,7 +14,7 @@ the diesel profiles)
 | Id | Kind | Parameters | What it is |
 |---|---|---|---|
 | `diesel-engine` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `engine` (`mainline`), `level` | the engine running: idle at `rpm` 0, full revs at 1; `load` is how hard it works |
-| `diesel-start` | one-shot | `size`, `engine`, `level` | the starter cranks it, it coughs, catches, flares past idle and settles |
+| `diesel-start` | one-shot | `size`, `engine`, `level` | silent until the engine coughs (no starter, no cranking), then it catches, flares past idle and settles |
 | `diesel-stop` | one-shot | `size`, `engine`, `level` | from idle the fuel is cut: it runs down through its last compressions, rocks to a stop, the turbo spins down |
 
 `size` scales a profile's revs: x1.2 at 0, x1 at 0.5 (the profile as
@@ -30,18 +30,18 @@ is `dieselStopTimes(engine).ends`, and its engine stands still at `.still`.
 
 ## The profiles (`DIESEL_PROFILES`)
 
-| `engine` | What | Cylinders, strokes | Idle - full rpm | Firing /s at idle - full | Turbo | Cranks, runs down |
+| `engine` | What | Cylinders, strokes | Idle - full rpm | Firing /s at idle - full | Turbo | Runs down |
 |---|---|---|---|---|---|---|
-| `railcar` | a railcar's or DMU's underfloor inline six | 6, four-stroke | 600 - 2000 | 30 - 100 | light | 1.4 s, 1.6 s |
-| `shunter` | a shunting loco's medium-speed six | 6, four-stroke | 420 - 1250 | 21 - 63 | light | 2.2 s, 2.6 s |
-| `mainline` | a mainline loco's turbocharged V12 (the default) | 12, four-stroke | 400 - 1100 | 40 - 110 | strong | 2.8 s, 3.4 s |
-| `two-stroke` | a big two-stroke V16, the EMD kind | 16, two-stroke | 315 - 904 | 84 - 241 | strongest | 3.2 s, 4 s |
-| `bus` | a city bus's turbocharged inline six, muffled | 6, four-stroke | 600 - 2200 | 30 - 110 | high, thin | 1.3 s, 1.2 s |
-| `truck` | a truck's air-cooled V8, open and clattering, with its fan | 8, four-stroke | 650 - 2300 | 43 - 153 | none | 1.2 s, 1.1 s |
+| `railcar` | a railcar's or DMU's underfloor inline six | 6, four-stroke | 600 - 2000 | 30 - 100 | light | 1.6 s |
+| `shunter` | a shunting loco's medium-speed six | 6, four-stroke | 420 - 1250 | 21 - 63 | light | 2.6 s |
+| `mainline` | a mainline loco's turbocharged V12 (the default) | 12, four-stroke | 400 - 1100 | 40 - 110 | strong | 3.4 s |
+| `two-stroke` | a big two-stroke V16, the EMD kind | 16, two-stroke | 315 - 904 | 84 - 241 | strongest | 4 s |
+| `bus` | a city bus's turbocharged inline six, muffled | 6, four-stroke | 600 - 2200 | 30 - 110 | high, thin | 1.2 s |
+| `truck` | a truck's air-cooled V8, open and clattering, with its fan | 8, four-stroke | 650 - 2300 | 43 - 153 | none | 1.1 s |
 
 Each profile also has its pulse sharpness, the low-pass over its tone (idling and
 working), the exhaust's resonance, the knock's band and level, the breath's
-level, the starter's whine and a `trim`, which evens the profiles to the same
+level and a `trim`, which evens the profiles to the same
 loudness. The values are in `sounds/designs/diesel.ts`.
 
 ## How an engine is synthesized
@@ -74,11 +74,12 @@ and profile. Every change glides (about 0.35 s), and the revs drift by up to 1%
 every 0.3 s (seeded): the governor hunting. A running loop changes `engine` in
 place.
 
-**Start.** The pinion clacks, the starter whine (a sawtooth, dragged at the
-firing rate by every compression) turns the engine at about 45% of idle with no
-fuel: only the compressions' dull thump. Half a second before it catches it
-coughs (six uneven bursts), then catches and flares to 1.45x idle, and the
-governor pulls it back to idle over about a second.
+**Start.** There is no starter motor and no cranking to hear: the start is
+silent until the engine itself sounds (a first version had a starter's
+sawtooth whine, which droned like an electric buzz and was dropped). For half a
+second it coughs (six uneven bursts, `COUGHING`), then catches and flares to
+1.45x idle, and the governor pulls it back to idle over about a second. Every
+engine starts the same way, so `dieselStartTimes` is the same for all.
 
 **Stop.** At 0.3 s the fuel is cut: the knock and the breath stop, and the
 engine coasts down through its compressions over `rundown`, then rocks back on
