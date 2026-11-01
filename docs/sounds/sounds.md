@@ -60,7 +60,7 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
 | `waterfall` | loop | `size` 0..1, `level` | a steady roar: low-passed noise, a deep rumble and a little spray hiss, wandering every 0.25 s; the bigger, the lower and heavier |
-| `sea-surf` | loop | `strength` 0..1, `level` | the sea on a shore: a quiet wash under waves every 6-10 s (seeded, uneven), each a rush whose low-pass opens as it rises, a bright break at the crest and a hiss of shingle as it draws back |
+| `sea-surf` | loop | `strength` 0..1, `level` | the sea on a shore: a steady wash, a low rush and a hiss whose filter and level drift slowly (every 0.7 s, seeded), swelling and settling with no single waves; fuller the stronger |
 | `spring-fountain` | loop | `size` 0..1, `level` | a spring, which the game draws as a fountain: the jets' hiss and the basin's splash, with a bright patter of droplets (band-passed noise clicks, 20-60 a second) |
 | `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit |
 | `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit |

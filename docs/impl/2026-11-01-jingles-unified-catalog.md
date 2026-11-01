@@ -42,8 +42,9 @@ Area: rail-island-music (jingles, lib, generator, site, sound designs); rail-isl
 - **Sound categories.** Every design has a `category` (trains, ships, water,
   editor) in the contract and in `sounds.meta.json`. The field is additive, so
   `SOUNDS_FORMAT` is unchanged.
-- **Sea surf.** `sea-surf` (`sounds/designs/water.ts`) is a quiet wash under
-  waves every 6-10 s, seeded and uneven, each with a rush, a break and shingle.
+- **Sea surf.** `sea-surf` (`sounds/designs/water.ts`) is the sea's steady
+  wash, slowly swelling and settling, with no single waves (see *Follow-up
+  changes* 1).
   In the game:
   - **Sources.** `WaterFeatures` groups each water tile's sea shore (sea cells
     with dry land beside them) into one source at its middle, as strong as the
@@ -68,6 +69,13 @@ Area: rail-island-music (jingles, lib, generator, site, sound designs); rail-isl
     tests, about 3.5 s), and `pnpm build` passes.
   - Webapp: `pnpm typecheck` passes, `pnpm test` passes (634 files, 8465
     tests), and `pnpm build` passes.
+
+## Follow-up changes
+1. **The surf without waves: only the sea's wash.** The uneven waves (a rush,
+   a break and shingle every 6-10 s) are gone. `sea-surf` is now one noise
+   source: a low rush and a hiss whose filter and level drift every 0.7 s,
+   seeded. Its test checks that nothing starts after the loop does. The game
+   re-imported it.
 
 ## How to test
 **Automated coverage.** None end-to-end: neither repository has an E2E framework,
@@ -96,17 +104,17 @@ and both ask for headless checks only. The unit suites cover the logic:
    the tidy version plays and the score follows. Switch **Version** to
    **Rewritten**: it carries on in the rewrite. In bar 3 the note and the chord
    read C natural and "D7/C", not B#.
-5. Back, then open **Sea surf** under Sound effects. Press **Start**: waves
-   every 6-10 s, and the spectrogram scrolls. Move **Strength**: the next waves
-   are bigger. Press **Stop**: the spectrogram stops scrolling and keeps its
-   picture.
+5. Back, then open **Sea surf** under Sound effects. Press **Start**: a steady
+   wash of the sea, slowly swelling, with no single waves, and the spectrogram
+   scrolls. Move **Strength**: it grows fuller. Press **Stop**: the spectrogram
+   stops scrolling and keeps its picture.
 6. Open `/?sounds` directly: the list opens filtered to Sound effects.
 7. Game on a desktop: the speaker button is in the top bar. In the browser's
    device toolbar, pick a phone in portrait: the button is gone, and three dots,
    then **Settings**, still has **Mute**. Turn the phone to landscape: the
    button is back.
-8. Game: zoom in on a sea shore. Waves sound every 6-10 s. Turn the camera away
-   from the sea and they stop. A river's rapids nearby still sound alongside
+8. Game: zoom in on a sea shore. The sea washes steadily. Turn the camera away
+   from the sea and it stops. A river's rapids nearby still sound alongside
    them.
 
 **Also worth trying.**
@@ -126,8 +134,7 @@ Nothing - the spec is implemented in full.
   drums, which were made for whole pieces. They may sound busy on a 2-6 s
   jingle (the spec's open question).
 - `jingle-3`'s tidy version is one bar (about 2 s): the recording is that short.
-- The surf's level, wave spacing and voice count were set by reasoning, not by
-  ear. A coast is nearly always in view.
+- The surf's level and voice count were set by reasoning, not by ear. A coast is nearly always in view.
 - The spectrogram reads the page's own audio chain, so it shows a sound effect
   only, never a playing piece.
 - The spelling fix changes the arranged ABC of existing pieces that have a
@@ -142,7 +149,7 @@ Nothing - the spec is implemented in full.
 - Export the chosen jingles for the game when the city jingles are built.
 
 ## Changelog
-- The island's sea shores now sound with waves when the camera looks at them.
+- The island's sea shores now wash softly when the camera looks at them.
 - On a phone held upright, the mute switch moves out of the top bar into
   Settings.
 - The music site lists all music and sounds in one searchable list, plays

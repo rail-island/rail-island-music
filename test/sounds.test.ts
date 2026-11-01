@@ -209,30 +209,15 @@ describe("the water", () => {
     expect(events("river-rapids", { strength: 1 }, 4).length).toBeGreaterThan(calm.length);
   });
 
-  it("break a wave on the shore every 6-10 s, unevenly, the same way every time", () => {
-    const waves = (seconds: number) => {
-      const { ctx, dest, starts } = stubContext();
-      const d = soundById("sea-surf")!;
-      if (d.kind !== "loop") throw new Error("sea-surf is a loop");
-      const v = d.start(ctx, dest, 0, {});
-      for (let now = 0; now < seconds; now += 1 / 60) v.tick(now, 0.2);
-      // after the steady wash, each wave starts three noise sources in order:
-      // its rush, its break and its shingle -- the rush is when the wave comes
-      return starts
-        .filter((s) => s.what === "noise")
-        .slice(1)
-        .filter((_, i) => i % 3 === 0)
-        .map((s) => s.at);
-    };
-    const at = waves(40);
-    const gaps = at.slice(1).map((t, i) => t - at[i]!);
-    expect(gaps.length).toBeGreaterThanOrEqual(3);
-    for (const g of gaps) {
-      expect(g).toBeGreaterThanOrEqual(6);
-      expect(g).toBeLessThanOrEqual(10);
-    }
-    expect(new Set(gaps.map((g) => g.toFixed(2))).size).toBeGreaterThan(1);
-    expect(waves(40)).toEqual(at);
+  it("wash the sea shore steadily, with no single waves", () => {
+    const { ctx, dest, starts } = stubContext();
+    const d = soundById("sea-surf")!;
+    if (d.kind !== "loop") throw new Error("sea-surf is a loop");
+    const v = d.start(ctx, dest, 0, { strength: 1 });
+    for (let now = 0; now < 30; now += 1 / 60) v.tick(now, 0.2);
+    // one noise source for the whole loop: nothing starts later, so no waves
+    expect(starts.filter((s) => s.what === "noise")).toEqual([{ at: 0, what: "noise" }]);
+    expect(starts.filter((s) => s.what === "osc")).toEqual([]);
   });
 
   it("schedule nothing past what they were ticked for", () => {
