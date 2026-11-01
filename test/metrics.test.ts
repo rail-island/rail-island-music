@@ -18,9 +18,9 @@ describe("sound metrics", async () => {
 
   it("size each design alone, not the whole module it sits in", () => {
     const m = (id: string) => metrics.get(id)!;
-    // dieselEngine shares diesel.ts with the start and the stop, and locoHorn trains.ts with
-    // the steam designs; the engine is the bigger design
-    expect(m("loco-horn").jsBytes).toBeLessThan(m("diesel-engine").jsBytes);
+    // the six engines share diesel.ts, and locoHorn trains.ts with the steam
+    // designs; an engine is the bigger design
+    expect(m("loco-horn").jsBytes).toBeLessThan(m("diesel-engine-mainline").jsBytes);
     for (const s of SOUNDS) expect(m(s.id).jsBytes).toBeGreaterThan(500);
   });
 

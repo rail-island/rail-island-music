@@ -33,7 +33,9 @@ A design is a `OneShotDesign` or a `LoopDesign`:
   Every design has a `level` (0..1).
 - **A one-shot** - `play(ctx, dest, t, values)`, which returns a `Voice`:
   `endsAt`, the time it falls silent by itself, and `stop(at)`, which fades it out.
-- **A loop** - `start(ctx, dest, t, values)`, which returns a `LoopVoice`. On
+- **A loop** - `start(ctx, dest, t, values)`, which returns a `LoopVoice`. Its
+  `endsAt` is Infinity while it runs on; a loop that winds down by itself (a
+  diesel shutting down) reports when it is silent, so a player may drop it then. On
   each `tick(now, horizon)` it schedules only `horizon` seconds ahead, so a loop
   nobody ticks (a hidden tab, a closed map) falls silent by itself. `set(values)`
   changes its parameters from the next scheduled event on.
@@ -57,9 +59,7 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `loco-horn` | one-shot | `pitch` 150-500 Hz, `call`, `level` | the two-tone air horn of a diesel, an electric or a multiple unit: a three-reed sawtooth chord (root, major third, fifth) through a soft low-pass |
 | `steam-whistle` | one-shot | `pitch` 400-1100 Hz, `call`, `level` | a steam locomotive's whistle: three sine pipes sliding up onto the note, over band-passed noise |
 | `steam-chuff` | loop | `rate` 0-12 beats/s, `intensity` 0..1, `level` | the exhaust beat: looped noise through a band-pass, gated by one struck envelope per beat; every fourth beat heavier; loudness `0.3 + 0.7 * intensity` |
-| `diesel-engine` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `engine` (`mainline`), `level` | a running diesel of one of six profiles (railcar, shunter, mainline V12, two-stroke V16, bus, truck), matched to recordings: a cycle wave of its cylinders' uneven pulses, the knock and the exhaust's breath gated in step, a turbo and, for the truck, a fan ([diesel.md](diesel.md)) |
-| `diesel-start` | one-shot | `size`, `engine`, `level` | the engine started: silent until it coughs (no starter), then it catches, flares and settles to idle, fading out as the game starts `diesel-engine` ([diesel.md](diesel.md)) |
-| `diesel-stop` | one-shot | `size`, `engine`, `level` | the engine shut down from idle: it runs down through its compressions, rocks to a stop, the turbo spins down ([diesel.md](diesel.md)) |
+| `diesel-engine-railcar`, `diesel-engine-shunter`, `diesel-engine-mainline`, `diesel-engine-two-stroke`, `diesel-engine-bus`, `diesel-engine-truck` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `state` (`run`, `start`, `stop`, `off`), `level` | a diesel engine, one loop per profile (a railcar's six, a shunter's six, a mainline V12, a two-stroke V16, a bus's six, a truck's V8), matched to recordings: a cycle wave of its cylinders' uneven pulses, the knock and the exhaust's breath gated in step, a turbo and, for the truck, a fan. `state` starts it and shuts it down inside the voice ([diesel.md](diesel.md)) |
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
@@ -108,7 +108,7 @@ another, measured as EBU R128 integrated loudness of a render at the defaults
 | Design | LUFS |
 |---|---|
 | `steam-chuff` | -30.6 (-27.5 at full effort) |
-| `diesel-engine` | -29.5 at every `engine` (about -40 idling, -21 at full revs and effort) |
+| `diesel-engine-*` | -29.5 for every engine (about -40 idling, -21 at full revs and effort) |
 | `river-rapids`, `waterfall`, `spring-fountain` | about -31 |
 | `sea-surf` | -33.7 |
 | `woods` | -38 |
@@ -186,11 +186,15 @@ when it sizes one; keep that annotation on a new design. The field is additive:
 
 ```bash
 pnpm exec tsx generator/renderSound.ts crossing-bell /tmp/bell.mp3 interval=0.5 --seconds=6
+pnpm exec tsx generator/renderSound.ts diesel-engine-bus /tmp/bus.mp3 state=start rpm=0 --at=4:rpm=0.7 --at=9:state=stop --seconds=14
 ```
 
 `generator/renderSound.ts` renders one design through the very code the game
 imports. A one-shot plays once at 0; a loop starts at 0 and is ticked for the
-whole length. It writes WAV or MP3 (ffmpeg), at 44.1 kHz, through headless
+whole length. `--at=S:name=value` changes a loop's value at S seconds (one
+change per flag); the loop is then ticked every 50 ms with the changes set as
+they come, the way the game drives it, which is how a diesel's start, revving
+and stop are heard in one render. It writes WAV or MP3 (ffmpeg), at 44.1 kHz, through headless
 Chromium's `OfflineAudioContext` (Playwright's, pre-installed in the cloud
 sessions). Parameters are `name=value`: a number is parsed as one, anything else
 is a choice. Use it to compare a design with a reference recording, or to send

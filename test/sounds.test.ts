@@ -17,6 +17,7 @@ import {
   dieselFiring,
   dieselLevel,
   dieselRpm,
+  dieselRuns,
   dieselStartTimes,
   dieselStopTimes,
 } from "../sounds/designs/diesel.ts";
@@ -96,8 +97,14 @@ describe("the designs", () => {
       "sea-surf",
       "edit-build",
       "edit-demolish",
-      "diesel-engine",
       "woods",
+      // the factory maps these on its diesel vehicles (game.sounds)
+      "diesel-engine-railcar",
+      "diesel-engine-shunter",
+      "diesel-engine-mainline",
+      "diesel-engine-two-stroke",
+      "diesel-engine-bus",
+      "diesel-engine-truck",
     ]) {
       expect(soundById(id), id).toBeDefined();
     }
@@ -130,7 +137,9 @@ describe("the designs", () => {
           v.stop(1.1);
         } else {
           const v = d.start(ctx, dest, 1, values);
-          expect(v.endsAt).toBe(Infinity);
+          // a loop runs on, unless it is an engine begun shut down
+          if (values.state === "off" || values.state === "stop") expect(v.endsAt, d.id).toBe(1);
+          else expect(v.endsAt, d.id).toBe(Infinity);
           v.tick(1, 0.5);
           v.stop(1.5);
         }
@@ -283,6 +292,52 @@ describe("the levels", () => {
 });
 
 describe("the diesel engine", () => {
+  const ENGINE_IDS = Object.keys(DIESEL_PROFILES).map((k) => `diesel-engine-${k}`);
+  const engineLoop = (id: string) => {
+    const d = soundById(id)!;
+    if (d.kind !== "loop") throw new Error(`${id} is a loop`);
+    return d;
+  };
+
+  /** A stub context whose engine-cycle oscillators record their frequency targets (the cycle rate), with the times. */
+  function recordingContext() {
+    const { ctx, dest } = stubContext();
+    const targets: Array<{ at: number; v: number }> = [];
+    const cancels: number[] = [];
+    const spy = ctx as unknown as {
+      createOscillator: () => {
+        type: string;
+        frequency: { setTargetAtTime: (v: number, at: number) => void; cancelScheduledValues: (at: number) => void };
+      };
+    };
+    const make = spy.createOscillator;
+    spy.createOscillator = () => {
+      const o = make();
+      // the engine cycle's oscillators only (the turbo is a sine): their frequency is the cycle rate
+      o.frequency.setTargetAtTime = (v, at) => {
+        if (o.type !== "sine") targets.push({ at, v });
+      };
+      o.frequency.cancelScheduledValues = (at) => cancels.push(at);
+      return o;
+    };
+    return { ctx, dest, targets, cancels };
+  }
+
+  it("is one loop per profile, with no engine choice left", () => {
+    expect(SOUNDS.filter((s) => s.id.startsWith("diesel")).map((s) => s.id)).toEqual(ENGINE_IDS);
+    for (const id of ["diesel-engine", "diesel-start", "diesel-stop"]) expect(soundById(id), id).toBeUndefined();
+    for (const id of ENGINE_IDS) {
+      const d = engineLoop(id);
+      expect(d.params.map((p) => p.name), id).toEqual(["rpm", "load", "size", "state", "level"]);
+      const state = d.params.find((p) => p.name === "state")!;
+      if (state.kind !== "choice") throw new Error("state is a choice");
+      expect(state.values.map((v) => v.value)).toEqual(["run", "start", "stop", "off"]);
+      expect(state.default).toBe("run");
+    }
+    expect(dieselRuns("run") && dieselRuns("start")).toBe(true);
+    expect(dieselRuns("stop") || dieselRuns("off")).toBe(false);
+  });
+
   it("fires faster as it revs, and a big engine lower than a small one", () => {
     expect(dieselFiring(0.5, 1)).toBeGreaterThan(dieselFiring(0.5, 0));
     expect(dieselFiring(1, 0.5)).toBeLessThan(dieselFiring(0, 0.5));
@@ -298,38 +353,97 @@ describe("the diesel engine", () => {
   });
 
   it("schedules only as far ahead as asked", () => {
-    const { ctx, dest } = stubContext();
-    const targets: number[] = [];
-    const spy = ctx as unknown as { createOscillator: () => { frequency: { setTargetAtTime: (v: number, at: number) => void } } };
-    const make = spy.createOscillator;
-    spy.createOscillator = () => {
-      const o = make();
-      o.frequency.setTargetAtTime = (_v, at) => targets.push(at);
-      return o;
-    };
-    const d = soundById("diesel-engine")!;
-    if (d.kind !== "loop") throw new Error("diesel-engine is a loop");
-    const v = d.start(ctx, dest, 0, {});
+    const { ctx, dest, targets } = recordingContext();
+    const v = engineLoop("diesel-engine-mainline").start(ctx, dest, 0, {});
     v.tick(0, 1);
-    expect(Math.max(...targets)).toBeLessThan(1);
+    expect(Math.max(...targets.map((x) => x.at))).toBeLessThan(1);
     v.stop(1);
     const n = targets.length;
     v.tick(1, 1);
     expect(targets).toHaveLength(n);
   });
+
+  it("joins the state it is begun in: running at once, silent shut down, the start only at `start`", () => {
+    for (const id of ENGINE_IDS) {
+      const running = recordingContext();
+      const r = engineLoop(id).start(running.ctx, running.dest, 2, { state: "run", rpm: 0 });
+      expect(r.endsAt).toBe(Infinity);
+      // at idle at once, no cough below it
+      expect(Math.min(...running.targets.map((x) => x.v)), id).toBeGreaterThan(0);
+      const off = recordingContext();
+      const o = engineLoop(id).start(off.ctx, off.dest, 2, { state: "off" });
+      o.tick(2, 1);
+      expect(o.endsAt, id).toBe(2);
+      // nothing turns: every frequency target is 0
+      expect(off.targets.every((x) => x.v === 0), id).toBe(true);
+      const starting = recordingContext();
+      const s = engineLoop(id).start(starting.ctx, starting.dest, 2, { state: "start" });
+      s.tick(2, 1);
+      expect(s.endsAt).toBe(Infinity);
+      // the coughs turn it slower than idle
+      const idleRate = Math.min(...running.targets.map((x) => x.v));
+      expect(Math.min(...starting.targets.map((x) => x.v)), id).toBeLessThan(idleRate);
+    }
+  });
+
+  it("starts and shuts down inside the voice when the state changes, reporting when it is silent", () => {
+    const { ctx, dest, targets, cancels } = recordingContext();
+    const v = engineLoop("diesel-engine-shunter").start(ctx, dest, 0, { state: "off" });
+    v.tick(0, 0.5);
+    // started: the start's program from now, and running from when it idles
+    v.set({ state: "start" });
+    v.tick(1, 0.5);
+    expect(cancels).toContain(1);
+    expect(v.endsAt).toBe(Infinity);
+    const { idles } = dieselStartTimes("shunter");
+    for (let now = 1; now < 1 + idles + 1; now += 0.1) v.tick(now, 0.5);
+    v.set({ state: "run", rpm: 1 });
+    for (let now = 1 + idles + 1; now < 6; now += 0.1) v.tick(now, 0.5);
+    expect(Math.max(...targets.map((x) => x.v))).toBeGreaterThan(dieselRpm("shunter", 0.5, 0.9) / 120);
+    // shut down: it winds down and says when it is silent
+    v.set({ state: "stop", rpm: 1 });
+    v.tick(6, 0.5);
+    expect(v.endsAt).toBeCloseTo(6 + dieselStopTimes("shunter").ends);
+    const n = targets.length;
+    for (let now = 6; now < 12; now += 0.1) v.tick(now, 0.5);
+    // nothing more is scheduled once it is off, and it stays silent at `off`
+    v.set({ state: "off" });
+    v.tick(12, 0.5);
+    expect(targets).toHaveLength(n);
+    expect(v.endsAt).toBeCloseTo(6 + dieselStopTimes("shunter").ends);
+    v.stop(12);
+  });
+
+  it("finishes a start the game asks to run before it idles, then glides to the revs", () => {
+    const { ctx, dest, targets } = recordingContext();
+    const v = engineLoop("diesel-engine-bus").start(ctx, dest, 0, { state: "start" });
+    v.set({ state: "run", rpm: 1, load: 1 });
+    v.tick(0.5, 0.5);
+    const { idles } = dieselStartTimes("bus");
+    // no running revs before the start has idled
+    const full = dieselRpm("bus", 0.5, 1) / 120;
+    expect(targets.filter((x) => x.at < idles).every((x) => x.v < full * 0.9)).toBe(true);
+    for (let now = 0.5; now < idles + 1; now += 0.1) v.tick(now, 0.5);
+    expect(targets.some((x) => x.at >= idles && x.v > full * 0.95)).toBe(true);
+    v.stop(idles + 1);
+  });
+
+  it("can be started again while it runs down", () => {
+    const { ctx, dest } = recordingContext();
+    const v = engineLoop("diesel-engine-two-stroke").start(ctx, dest, 0, { state: "run" });
+    v.tick(0, 0.5);
+    v.set({ state: "stop" });
+    v.tick(1, 0.5);
+    expect(v.endsAt).toBeLessThan(Infinity);
+    v.set({ state: "start" });
+    v.tick(2, 0.5);
+    expect(v.endsAt).toBe(Infinity);
+    v.stop(3);
+  });
 });
 
 describe("the diesel profiles", () => {
   const engines = Object.keys(DIESEL_PROFILES);
-
-  it("are every choice of `engine`, the same on the loop, the start and the stop", () => {
-    for (const id of ["diesel-engine", "diesel-start", "diesel-stop"]) {
-      const p = soundById(id)!.params.find((x) => x.name === "engine");
-      if (p?.kind !== "choice") throw new Error(`${id} has no engine choice`);
-      expect(p.values.map((v) => v.value), id).toEqual(engines);
-      expect(p.default).toBe("mainline");
-    }
-  });
 
   it("idle and run at their engine's measured speeds, `size` 0.5 being the profile itself", () => {
     for (const e of engines) {
@@ -362,14 +476,11 @@ describe("the diesel profiles", () => {
     expect(cycleShape(DIESEL_PROFILES.truck, 0.3, 1)).toEqual(cycleShape(DIESEL_PROFILES.truck, 0.3, 1));
   });
 
-  it("start with the engine itself, no starter: silent until it coughs, ending once settled at idle", () => {
+  it("start with the engine itself, no starter: silent until it coughs", () => {
     for (const e of engines) {
-      const { catches, idles, ends } = dieselStartTimes(e);
+      const { catches, idles } = dieselStartTimes(e);
       expect(catches, e).toBeGreaterThan(0);
       expect(idles).toBeGreaterThan(catches);
-      expect(ends).toBeGreaterThan(idles);
-      const d = soundById("diesel-start")!;
-      if (d.kind !== "oneShot") throw new Error("diesel-start is a one-shot");
       const { ctx, dest } = stubContext();
       const types: string[] = [];
       const spy = ctx as unknown as { createOscillator: () => { type: string } };
@@ -384,7 +495,9 @@ describe("the diesel profiles", () => {
           },
         });
       };
-      expect(d.play(ctx, dest, 2, { engine: e }).endsAt).toBeCloseTo(2 + ends);
+      const d = soundById(`diesel-engine-${e}`)!;
+      if (d.kind !== "loop") throw new Error("an engine is a loop");
+      d.start(ctx, dest, 2, { state: "start" }).tick(2, 1);
       // the starter motor was a sawtooth; the engine's own oscillators are periodic waves and a sine turbo
       expect(types, e).not.toContain("sawtooth");
     }
@@ -395,33 +508,8 @@ describe("the diesel profiles", () => {
       const { cut, still, ends } = dieselStopTimes(e);
       expect(still, e).toBeGreaterThan(cut);
       expect(ends).toBeGreaterThan(still);
-      const d = soundById("diesel-stop")!;
-      if (d.kind !== "oneShot") throw new Error("diesel-stop is a one-shot");
-      const { ctx, dest } = stubContext();
-      expect(d.play(ctx, dest, 1, { engine: e }).endsAt).toBeCloseTo(1 + ends);
     }
     expect(dieselStopTimes("two-stroke").still).toBeGreaterThan(dieselStopTimes("truck").still);
-  });
-
-  it("change engine while running", () => {
-    const { ctx, dest } = stubContext();
-    let waves = 0;
-    const spy = ctx as unknown as { createOscillator: () => { setPeriodicWave: () => void } };
-    const make = spy.createOscillator;
-    spy.createOscillator = () => {
-      const o = make();
-      o.setPeriodicWave = () => void waves++;
-      return o;
-    };
-    const d = soundById("diesel-engine")!;
-    if (d.kind !== "loop") throw new Error("diesel-engine is a loop");
-    const v = d.start(ctx, dest, 0, { engine: "bus" });
-    v.tick(0, 0.5);
-    const before = waves;
-    v.set({ engine: "truck" });
-    v.tick(0.5, 0.5);
-    expect(waves).toBe(before + 3);
-    v.stop(1);
   });
 });
 

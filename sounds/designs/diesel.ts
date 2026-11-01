@@ -1,7 +1,8 @@
-// Diesel engines: the running engine of a locomotive, a railcar, a bus or a
-// truck, and its start and stop (docs/sounds/diesel.md). Every engine is one
-// profile of DIESEL_PROFILES, matched to recordings of real engines: how many
-// cylinders fire per cycle and how unevenly, how fast it idles and runs, how
+// Diesel engines: the engine of a locomotive, a railcar, a bus or a truck, one
+// loop per engine (`diesel-engine-<kind>`) that runs, starts and stops by its
+// `state` (docs/sounds/diesel.md). Every engine is one profile of
+// DIESEL_PROFILES, matched to recordings of real engines: how many cylinders
+// fire per cycle and how unevenly, how fast it idles and runs, how
 // bright its exhaust is, how hard its combustion knocks, its turbo and fan.
 //
 // One engine cycle is drawn as a waveform (one pressure pulse per cylinder, each
@@ -11,7 +12,7 @@
 // spikes gates a band of noise (the diesel knock) and as soft lumps the
 // exhaust's breath, in step with the tone.
 
-import { LEVEL, choice, filter, gain, loop, noiseSource, num, oneShot, seeded, voiceOf } from "../nodes.ts";
+import { LEVEL, choice, filter, gain, loop, noiseSource, num, seeded, voiceOf } from "../nodes.ts";
 import type { SoundParam, SoundValues } from "../types.ts";
 
 /** One kind of diesel engine, as measured from recordings (docs/sounds/diesel.md). */
@@ -157,15 +158,6 @@ export function dieselProfile(engine: string): DieselProfile {
   return (DIESEL_PROFILES as Record<string, DieselProfile>)[engine] ?? DIESEL_PROFILES.mainline;
 }
 
-/** Which engine it is: the game picks it from the vehicle. */
-const ENGINE: SoundParam = {
-  name: "engine",
-  title: "Engine",
-  kind: "choice",
-  values: Object.entries(DIESEL_PROFILES).map(([value, p]) => ({ value, title: p.title })),
-  default: "mainline",
-};
-
 /** A finer size within the profile: 0 small and quick, 1 big and slow; 0.5 is the profile as measured. */
 const SIZE: SoundParam = { name: "size", title: "Size", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 };
 
@@ -300,17 +292,16 @@ interface Engine {
   sources: AudioScheduledSourceNode[];
   /** Glide every part to `s` from `at`, over about `tau` seconds. */
   drive(at: number, s: EngineState, tau: number): void;
-  /** Switch to another profile's waves and colours from `at` on. */
-  setProfile(at: number, p: DieselProfile): void;
+  /** Drop every change scheduled from `at` on, so a new course can be set from there. */
+  cancel(at: number): void;
 }
 
 /** How far the knock and the breath stay open between firings (the pulses peak at 1 above it). */
 const KNOCK_FLOOR = 0.35;
 const BREATH_FLOOR = 0.8;
 
-function buildEngine(ctx: BaseAudioContext, into: AudioNode, t: number, first: DieselProfile): Engine {
-  let p = first;
-  let w = wavesOf(ctx, p);
+function buildEngine(ctx: BaseAudioContext, into: AudioNode, t: number, p: DieselProfile): Engine {
+  const w = wavesOf(ctx, p);
   // Every part goes through the master, which rises with the revs and the effort.
   const master = gain(ctx);
   master.connect(into);
@@ -369,21 +360,27 @@ function buildEngine(ctx: BaseAudioContext, into: AudioNode, t: number, first: D
   breathSrc.start(t, 0.61);
   fanSrc.start(t, 1.27);
 
-  const setProfile = (at: number, next: DieselProfile) => {
-    p = next;
-    w = wavesOf(ctx, p);
-    tone.setPeriodicWave(w.tone);
-    knockOsc.setPeriodicWave(w.knock);
-    breathOsc.setPeriodicWave(w.breath);
-    body.frequency.setValueAtTime(p.body[0], at);
-    body.Q.setValueAtTime(p.body[1], at);
-    body.gain.setValueAtTime(p.body[2], at);
-    knockBand.frequency.setValueAtTime(p.knock[0], at);
-  };
+  const driven: AudioParam[] = [
+    ...cyclers.map((o) => o.frequency),
+    toneGain.gain,
+    lp.frequency,
+    knockGate.gain,
+    knockLevel.gain,
+    knockBand.frequency,
+    breathGate.gain,
+    breathLevel.gain,
+    breathLp.frequency,
+    master.gain,
+    turbo.frequency,
+    turboGain.gain,
+    fanGain.gain,
+  ];
 
   return {
     sources: [tone, knockOsc, breathOsc, turbo, knockSrc, breathSrc, fanSrc],
-    setProfile,
+    cancel(at) {
+      for (const param of driven) param.cancelScheduledValues(at);
+    },
     drive(at, s, tau) {
       const idle = p.idleRpm;
       // 0 stopped, 1 idle, more when revving
@@ -426,119 +423,44 @@ function turboSpeed(rpm: number, load: number): number {
 /** Overall loudness of the engine sounds, against the other loops (docs/sounds/sounds.md, levels). */
 const DIESEL_TRIM = 0.138;
 
-export const dieselEngine = /* @__PURE__ */ loop({
-  id: "diesel-engine",
-  title: "Diesel engine",
-  category: "trains",
-  description:
-    "A running diesel: a locomotive's, a railcar's, a bus's or a truck's engine (`engine`), idling and revving with the speed, growling and knocking harder as it works, with its turbo's whine.",
-  params: [
-    { name: "rpm", title: "Revs", kind: "number", min: 0, max: 1, step: 0.05, default: 0.4 },
-    { name: "load", title: "Effort", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
-    SIZE,
-    ENGINE,
-    LEVEL,
+/**
+ * What the engine is doing, set by the game: `start` and `run` mean it runs, `stop`
+ * and `off` that it does not. A change between the two plays the start or the stop
+ * inside the voice; the two words of a side differ only when a voice begins: at
+ * `start` it plays the start, at `run` it is running at once, at `stop` or `off`
+ * it is silent (docs/sounds/diesel.md).
+ */
+const STATE: SoundParam = {
+  name: "state",
+  title: "State",
+  kind: "choice",
+  values: [
+    { value: "run", title: "Running" },
+    { value: "start", title: "Starting" },
+    { value: "stop", title: "Stopping" },
+    { value: "off", title: "Off" },
   ],
-  start(ctx, dest, t, initial) {
-    const out = gain(ctx, num(initial, "level") * DIESEL_TRIM);
-    out.connect(dest);
-    let engineName = choice(initial, "engine");
-    const engine = buildEngine(ctx, out, t, dieselProfile(engineName));
-    const base = voiceOf(out, engine.sources, Infinity);
-    const rnd = seeded(0xd1e5);
-    let v: SoundValues = initial;
-    let next = t;
-    let stopped = false;
-    // An engine has inertia: every change glides over about half a second, the turbo slower.
-    const apply = (at: number, wobble: number, tau: number) => {
-      const rpm = num(v, "rpm");
-      const load = num(v, "load");
-      const name = choice(v, "engine");
-      if (name !== engineName) {
-        engineName = name;
-        engine.setProfile(at, dieselProfile(name));
-      }
-      engine.drive(
-        at,
-        { revs: dieselRpm(name, num(v, "size"), rpm) * wobble, load, fire: 1, turbo: turboSpeed(rpm, load) },
-        tau,
-      );
-    };
-    // At once at the start, so a loop taking over from `diesel-start` is there at its level.
-    apply(t, 1, 0.01);
-    next = t + 0.3;
-    return {
-      endsAt: Infinity,
-      stop(at) {
-        stopped = true;
-        base.stop(at);
-      },
-      set(values) {
-        v = values;
-      },
-      tick(now, horizon) {
-        if (stopped) return;
-        if (next < now) next = now;
-        // The revs never sit quite still: a small drift every 0.3 s (the governor hunting).
-        while (next < now + horizon) {
-          apply(next, 0.99 + 0.02 * rnd(), 0.35);
-          next += 0.3;
-        }
-      },
-    };
-  },
-});
+  default: "run",
+};
+
+/** Whether a `state` value means the engine runs. */
+export function dieselRuns(state: string): boolean {
+  return state === "run" || state === "start";
+}
 
 /** How long the engine coughs before it catches: the start begins with the first cough. */
 const COUGHING = 0.5;
 
 /**
- * The start's moments, seconds after it begins: the engine catches, and the
- * sound has handed over to the loop. The same for every engine: there is no
- * starter and no cranking to hear, only the engine coming to life.
+ * The start's moments, seconds after it begins: the engine catches, and it has
+ * settled at idle, from where it follows `rpm` and `load`. The same for every
+ * engine: there is no starter and no cranking to hear, only the engine coming to
+ * life.
  */
-export function dieselStartTimes(_engine: string): { catches: number; idles: number; ends: number } {
+export function dieselStartTimes(_engine: string): { catches: number; idles: number } {
   const catches = COUGHING;
-  const idles = catches + 1.8;
-  return { catches, idles, ends: idles + 0.6 };
+  return { catches, idles: catches + 1.8 };
 }
-
-export const dieselStart = /* @__PURE__ */ oneShot({
-  id: "diesel-start",
-  title: "Diesel engine start",
-  category: "trains",
-  description:
-    "A diesel being started: silent until it coughs, then it catches, flares and settles to idle. The game starts `diesel-engine` at idle as this one fades out.",
-  params: [SIZE, ENGINE, LEVEL],
-  play(ctx, dest, t, v) {
-    const name = choice(v, "engine");
-    const p = dieselProfile(name);
-    const out = gain(ctx, num(v, "level") * DIESEL_TRIM);
-    out.connect(dest);
-    const engine = buildEngine(ctx, out, t, p);
-    const idle = dieselRpm(name, num(v, "size"), 0);
-    const coughRevs = Math.min(220, idle * 0.45);
-    const { catches, idles, ends } = dieselStartTimes(name);
-    const sources = [...engine.sources];
-    // No starter and no cranking (silence until the first cough): a few
-    // cylinders fire, then more, unevenly, as it catches.
-    const rnd = seeded(p.cylinders * 31 + p.idleRpm);
-    const coughs = 6;
-    for (let i = 0; i < coughs; i++) {
-      const at = t + (i * COUGHING) / coughs;
-      const fire = i % 2 === 0 ? 0.3 + 0.5 * rnd() : 0.05;
-      engine.drive(at, { revs: coughRevs * (1 + i * 0.12), load: 0.3, fire, turbo: 0 }, 0.03);
-    }
-    // It catches and flares past idle, then the governor pulls it back.
-    engine.drive(t + catches, { revs: idle * 1.45, load: 0.6, fire: 1, turbo: 0.3 }, 0.22);
-    engine.drive(t + catches + 0.8, { revs: idle, load: 0.1, fire: 1, turbo: turboSpeed(0, 0.1) }, 0.4);
-    // The sound fades out at idle as the loop takes over.
-    out.gain.setValueAtTime(num(v, "level") * DIESEL_TRIM, t + idles);
-    out.gain.linearRampToValueAtTime(0, t + ends);
-    for (const s of engine.sources) s.stop(t + ends + 0.05);
-    return voiceOf(out, sources, t + ends);
-  },
-});
 
 /** The stop's moments, seconds after it begins: the fuel is cut, the engine stands still, the sound ends. */
 export function dieselStopTimes(engine: string): { cut: number; still: number; ends: number } {
@@ -549,46 +471,166 @@ export function dieselStopTimes(engine: string): { cut: number; still: number; e
   return { cut, still, ends: still + Math.max(0.6, p.turbo[2] > 0 ? p.rundown * 0.8 : 0.6) };
 }
 
-export const dieselStop = /* @__PURE__ */ oneShot({
-  id: "diesel-stop",
-  title: "Diesel engine stop",
-  category: "trains",
-  description:
-    "A diesel being shut down from idle: the fuel is cut, it runs down through its last compressions and rocks to a stop while the turbo spins down. The game stops `diesel-engine` as this one starts.",
-  params: [SIZE, ENGINE, LEVEL],
-  play(ctx, dest, t, v) {
-    const name = choice(v, "engine");
-    const p = dieselProfile(name);
-    const level = num(v, "level") * DIESEL_TRIM;
-    const out = gain(ctx);
-    out.connect(dest);
-    // Fade in over the loop's own fade out.
-    out.gain.setValueAtTime(0, t);
-    out.gain.linearRampToValueAtTime(level, t + 0.06);
-    const engine = buildEngine(ctx, out, t, p);
-    const idle = dieselRpm(name, num(v, "size"), 0);
-    const { cut, still, ends } = dieselStopTimes(name);
-    engine.drive(t, { revs: idle, load: 0.1, fire: 1, turbo: turboSpeed(0, 0.1) }, 0.01);
-    // Fuel cut: no more combustion; it coasts down through its compressions.
-    engine.drive(t + cut, { revs: idle * 0.55, load: 0, fire: 0, turbo: turboSpeed(0, 0.1) }, p.rundown * 0.25);
-    engine.drive(t + cut + p.rundown * 0.45, { revs: 0, load: 0, fire: 0, turbo: 0 }, p.rundown * 0.22);
-    // The turbo spins down on its own, slower.
-    engine.drive(t + still, { revs: 0, load: 0, fire: 0, turbo: 0 }, (ends - still) / 3);
-    const sources = [...engine.sources];
-    // It rocks back on the last compression: a dull knock.
-    const thud = noiseSource(ctx, false);
-    const lp = filter(ctx, "lowpass", 180, 1.5);
-    const tg = gain(ctx);
-    thud.connect(lp).connect(tg).connect(out);
-    tg.gain.setValueAtTime(0, t + still - 0.1);
-    tg.gain.linearRampToValueAtTime(0.9, t + still - 0.09);
-    tg.gain.setTargetAtTime(0, t + still - 0.08, 0.06);
-    thud.start(t + still - 0.1, 0.9);
-    thud.stop(t + still + 0.4);
-    sources.push(thud);
-    out.gain.setValueAtTime(level, t + ends - 0.2);
-    out.gain.linearRampToValueAtTime(0, t + ends);
-    for (const s of engine.sources) s.stop(t + ends + 0.05);
-    return voiceOf(out, sources, t + ends);
-  },
-});
+/** No starter and no cranking (silence until the first cough): it coughs, catches, flares past idle and settles. */
+function playStart(engine: Engine, kind: DieselEngineKind, p: DieselProfile, idle: number, t: number): void {
+  const coughRevs = Math.min(220, idle * 0.45);
+  const { catches } = dieselStartTimes(kind);
+  const rnd = seeded(p.cylinders * 31 + p.idleRpm);
+  const coughs = 6;
+  for (let i = 0; i < coughs; i++) {
+    const at = t + (i * COUGHING) / coughs;
+    const fire = i % 2 === 0 ? 0.3 + 0.5 * rnd() : 0.05;
+    engine.drive(at, { revs: coughRevs * (1 + i * 0.12), load: 0.3, fire, turbo: 0 }, 0.03);
+  }
+  // It catches and flares past idle, then the governor pulls it back.
+  engine.drive(t + catches, { revs: idle * 1.45, load: 0.6, fire: 1, turbo: 0.3 }, 0.22);
+  engine.drive(t + catches + 0.8, { revs: idle, load: 0.1, fire: 1, turbo: turboSpeed(0, 0.1) }, 0.4);
+}
+
+/**
+ * The fuel is cut at idle: it runs down through its last compressions and rocks
+ * back on the last one (a thud, returned as its source) while the turbo spins down.
+ */
+function playStop(ctx: BaseAudioContext, out: AudioNode, engine: Engine, kind: DieselEngineKind, p: DieselProfile, idle: number, t: number): AudioScheduledSourceNode {
+  const { cut, still, ends } = dieselStopTimes(kind);
+  // Back to idle first, wherever it ran.
+  engine.drive(t, { revs: idle, load: 0.1, fire: 1, turbo: turboSpeed(0, 0.1) }, 0.1);
+  // Fuel cut: no more combustion; it coasts down through its compressions.
+  engine.drive(t + cut, { revs: idle * 0.55, load: 0, fire: 0, turbo: turboSpeed(0, 0.1) }, p.rundown * 0.25);
+  engine.drive(t + cut + p.rundown * 0.45, { revs: 0, load: 0, fire: 0, turbo: 0 }, p.rundown * 0.22);
+  // The turbo spins down on its own, slower.
+  engine.drive(t + still, { revs: 0, load: 0, fire: 0, turbo: 0 }, (ends - still) / 3);
+  const thud = noiseSource(ctx, false);
+  const lp = filter(ctx, "lowpass", 180, 1.5);
+  const tg = gain(ctx);
+  thud.connect(lp).connect(tg).connect(out);
+  tg.gain.setValueAtTime(0, t + still - 0.1);
+  tg.gain.linearRampToValueAtTime(0.9, t + still - 0.09);
+  tg.gain.setTargetAtTime(0, t + still - 0.08, 0.06);
+  thud.start(t + still - 0.1, 0.9);
+  thud.stop(t + still + 0.4);
+  return thud;
+}
+
+/** What the engine's voice is doing: silent, starting, running or running down. */
+type Phase = "off" | "starting" | "running" | "stopping";
+
+const ENGINE_WORDS: Record<DieselEngineKind, string> = {
+  railcar: "A diesel railcar's or DMU's underfloor inline six",
+  shunter: "A shunting locomotive's medium-speed six",
+  mainline: "A mainline diesel locomotive's turbocharged V12",
+  "two-stroke": "A big two-stroke V16 locomotive engine, the EMD kind",
+  bus: "A city bus's turbocharged inline six, muffled",
+  truck: "A truck's air-cooled V8, open and clattering, with its fan",
+};
+
+/**
+ * One engine's loop (`diesel-engine-<kind>`): it runs by `rpm` and `load`, and
+ * `state` starts it and shuts it down inside the same voice.
+ */
+function dieselEngineOf(kind: DieselEngineKind) {
+  const p: DieselProfile = DIESEL_PROFILES[kind];
+  return loop({
+    id: `diesel-engine-${kind}`,
+    title: `Diesel engine: ${p.title}`,
+    category: "trains",
+    description: `${ENGINE_WORDS[kind]}: idling and revving with the speed (\`rpm\`), growling and knocking harder as it works (\`load\`). \`state\` starts it (it coughs, catches and settles to idle) and shuts it down (it runs down and rocks to a stop).`,
+    params: [
+      { name: "rpm", title: "Revs", kind: "number", min: 0, max: 1, step: 0.05, default: 0.4 },
+      { name: "load", title: "Effort", kind: "number", min: 0, max: 1, step: 0.05, default: 0.5 },
+      SIZE,
+      STATE,
+      LEVEL,
+    ],
+    start(ctx, dest, t, initial) {
+      const out = gain(ctx, num(initial, "level") * DIESEL_TRIM);
+      out.connect(dest);
+      const engine = buildEngine(ctx, out, t, p);
+      // The stops' thuds join the sources as they are made, so stopping the voice stops them too.
+      const sources = [...engine.sources];
+      const base = voiceOf(out, sources, Infinity);
+      const rnd = seeded(0xd1e5);
+      let v: SoundValues = initial;
+      let phase: Phase = "off";
+      // When a start or a stop is over.
+      let until = t;
+      let endsAt = Infinity;
+      let next = t;
+      let stopped = false;
+      const idle = () => dieselRpm(kind, num(v, "size"), 0);
+      // An engine has inertia: every change glides over about half a second, the turbo slower.
+      const apply = (at: number, wobble: number, tau: number) => {
+        const rpm = num(v, "rpm");
+        const load = num(v, "load");
+        engine.drive(at, { revs: dieselRpm(kind, num(v, "size"), rpm) * wobble, load, fire: 1, turbo: turboSpeed(rpm, load) }, tau);
+      };
+      const begin = (at: number) => {
+        engine.cancel(at);
+        playStart(engine, kind, p, idle(), at);
+        phase = "starting";
+        until = at + dieselStartTimes(kind).idles;
+        endsAt = Infinity;
+      };
+      const end = (at: number) => {
+        engine.cancel(at);
+        sources.push(playStop(ctx, out, engine, kind, p, idle(), at));
+        phase = "stopping";
+        until = at + dieselStopTimes(kind).ends;
+        endsAt = until;
+      };
+      // A voice joins the state it is begun in: only `start` plays a start.
+      const first = choice(initial, "state");
+      if (first === "run") {
+        phase = "running";
+        apply(t, 1, 0.01);
+        next = t + 0.3;
+      } else if (first === "start") {
+        begin(t);
+      } else {
+        phase = "off";
+        engine.drive(t, { revs: 0, load: 0, fire: 0, turbo: 0 }, 0.01);
+        endsAt = t;
+      }
+      return {
+        get endsAt() {
+          return endsAt;
+        },
+        stop(at) {
+          stopped = true;
+          base.stop(at);
+        },
+        set(values) {
+          v = values;
+        },
+        tick(now, horizon) {
+          if (stopped) return;
+          const runs = phase === "starting" || phase === "running";
+          if (dieselRuns(choice(v, "state")) !== runs) {
+            if (runs) end(now);
+            else begin(now);
+          }
+          if (phase === "stopping" && now >= until) phase = "off";
+          if (phase === "starting" && until < now + horizon) {
+            // Settled at idle: from here it follows the revs and the effort.
+            phase = "running";
+            next = until;
+          }
+          if (phase !== "running") return;
+          if (next < now) next = now;
+          // The revs never sit quite still: a small drift every 0.3 s (the governor hunting).
+          while (next < now + horizon) {
+            apply(next, 0.99 + 0.02 * rnd(), 0.35);
+            next += 0.3;
+          }
+        },
+      };
+    },
+  });
+}
+
+export const dieselEngineRailcar = /* @__PURE__ */ dieselEngineOf("railcar");
+export const dieselEngineShunter = /* @__PURE__ */ dieselEngineOf("shunter");
+export const dieselEngineMainline = /* @__PURE__ */ dieselEngineOf("mainline");
+export const dieselEngineTwoStroke = /* @__PURE__ */ dieselEngineOf("two-stroke");
+export const dieselEngineBus = /* @__PURE__ */ dieselEngineOf("bus");
+export const dieselEngineTruck = /* @__PURE__ */ dieselEngineOf("truck");
