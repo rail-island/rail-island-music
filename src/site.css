@@ -258,7 +258,7 @@ a {
 }
 
 @media (max-width: 640px) {
-  .sound-col-desc {
+  .sound-col-wide {
     display: none;
   }
 }
@@ -295,38 +295,39 @@ a {
   accent-color: var(--m-primary);
 }
 
-/* --- The list, grouped by category (src/App.tsx) -------------------------- */
+/* --- The list: one sortable table (src/App.tsx) ------------------------- */
 .sound-chip__count {
   margin-left: 6px;
   color: var(--m-on-surface-variant);
   font-size: 0.8rem;
 }
 
-.sound-group {
-  margin: 20px 0 4px;
+.sound-tablewrap {
+  margin-top: 16px;
+  overflow-x: auto;
 }
 
-.sound-group h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 600;
-}
-
-.sound-group p {
-  margin: 2px 0 6px;
-  font-size: 0.85rem;
-}
-
-/* The same columns in every group, so the tables line up. */
-.sound-group .sound-table {
-  table-layout: fixed;
-}
-
-.sound-group .sound-table th:nth-child(1) {
-  width: 30%;
-}
-
-.sound-group .sound-table th:nth-child(2) {
-  width: 110px;
+.sound-sort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
   white-space: nowrap;
+}
+
+.sound-caret {
+  display: inline-block;
+  min-width: 1em;
+  font-size: 0.7rem;
+}
+
+.sound-table th.sound-col-num {
+  text-align: right;
+}
+
+.sound-row__id {
+  color: var(--m-on-surface-variant);
+  font-size: 0.8rem;
 }

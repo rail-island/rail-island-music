@@ -17,7 +17,7 @@ export function birdGap(density: number, birds: number, r: number): number {
   return (2 + 6 * r) / (0.15 + 1.2 * birds * (0.3 + 0.7 * density));
 }
 
-export const woods = loop({
+export const woods = /* @__PURE__ */ loop({
   id: "woods",
   title: "Woods",
   category: "nature",

@@ -3,7 +3,7 @@
 
 import { LEVEL, envelope, filter, gain, num, oneShot, voiceOf } from "../nodes.ts";
 
-export const shipHorn = oneShot({
+export const shipHorn = /* @__PURE__ */ oneShot({
   id: "ship-horn",
   title: "Ship horn",
   category: "ships",

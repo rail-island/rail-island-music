@@ -75,7 +75,7 @@ function waterLoop(
   };
 }
 
-export const riverRapids = loop({
+export const riverRapids = /* @__PURE__ */ loop({
   id: "river-rapids",
   title: "River rapids",
   category: "water",
@@ -128,7 +128,7 @@ export const riverRapids = loop({
   },
 });
 
-export const waterfall = loop({
+export const waterfall = /* @__PURE__ */ loop({
   id: "waterfall",
   title: "Waterfall",
   category: "water",
@@ -168,7 +168,7 @@ export const waterfall = loop({
   },
 });
 
-export const springFountain = loop({
+export const springFountain = /* @__PURE__ */ loop({
   id: "spring-fountain",
   title: "Spring fountain",
   category: "water",
@@ -216,7 +216,7 @@ export const springFountain = loop({
  * The sea on a shore: a steady wash, its low rush and its hiss slowly swelling
  * and settling, with no single waves. `strength` is how loud and full it is.
  */
-export const seaSurf = loop({
+export const seaSurf = /* @__PURE__ */ loop({
   id: "sea-surf",
   title: "Sea surf",
   category: "water",

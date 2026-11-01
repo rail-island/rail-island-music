@@ -1,6 +1,6 @@
 # The catalog site (sound.railisland.com)
 
-**Covers** - the Solid site that lists and plays every sound Rail Island plays: the list grouped by category with its search, category and kind filters; a sound's page with its spectrogram; stopping what a page plays when it is left; the URL state.
+**Covers** - the Solid site that lists and plays every sound Rail Island plays: one sortable table with each sound's cost metrics, its search, category and kind filters; a sound's page with its spectrogram; stopping what a page plays when it is left; the URL state.
 **Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/catalogList.ts`, `src/EffectPage.tsx`, `src/audition.ts`, `src/query.ts`, `src/site.css`, `src/favicon.svg`, `test/query.test.ts`, `test/catalogList.test.ts`, `test/audition.test.ts`
 **See also** - [../sounds/sounds.md](../sounds/sounds.md), [../guide/deploy.md](../guide/deploy.md)
 
@@ -11,13 +11,16 @@ and table), in shape (one filterable list, a detail per item) and in stack
 ## Data
 
 The designs themselves (`sounds/`), bundled into the site from source, so a
-page plays the very code the game imports. Nothing is fetched. The build also
-copies `export/sounds/` into `dist/`, so the deployed site serves the bundle the
-game imports.
+page plays the very code the game imports. The build also copies
+`export/sounds/` into `dist/`, so the deployed site serves the bundle the game
+imports. The one thing fetched is that export's `sounds/sounds.meta.json`, for
+the metrics the build measured ([../sounds/sounds.md](../sounds/sounds.md#metrics)):
+until it arrives, or if it is missing, the metric cells show a dash.
 
 ## The list
 
-Every sound design, under a heading per category (`src/catalogList.ts`):
+Every sound design in **one table**, the way the factory lists its models
+(`src/catalogList.ts`):
 - **Search box** - every word must match the title, id, description, category
   or kind (`filterSounds`).
 - **Kind chips** - All, One-shots, Loops.
@@ -25,10 +28,15 @@ Every sound design, under a heading per category (`src/catalogList.ts`):
   ([../sounds/sounds.md](../sounds/sounds.md#categories)), each with the number
   of sounds it holds (`countByCategory`) and its description as a tooltip. A
   second click on the chosen chip clears it.
-- **Groups** - the matching sounds under their category's title and
-  description, in category order; a category with no match is left out
-  (`groupByCategory`). Each group is a table: title, kind, and what it is (the
-  description, hidden on a phone).
+- **Columns** (`COLUMNS`) - title (with the id under it), category, kind, JS
+  size, nodes at start, nodes per second, length in seconds and the number of
+  parameters. The last three are hidden on a phone. A row's tooltip is its
+  description.
+- **Sorting** (`sortSounds`) - a header click sorts on its column; a second
+  click flips the direction. Text starts ascending, numbers descending. The
+  default is category, in the order of `CATEGORIES`, which reads like the old
+  grouped list. A missing value (a loop's length, metrics not loaded) sorts
+  last in both directions, and ties keep the order of `SOUNDS`.
 
 A row opens the sound's page, and the app bar's back arrow returns to the list
 with its filters.
@@ -56,7 +64,9 @@ over the list.
 ## URL state
 
 Everything is in the query string (`src/query.ts`):
-- the list: `q`, `cat` (a category id) and `kind` (`oneShot`, `loop`);
+- the list: `q`, `cat` (a category id), `kind` (`oneShot`, `loop`), `sort` (a
+  column key; absent for category) and `dir` (absent for the column's own
+  direction);
 - the open sound: `sound=<id>`.
 
 Unknown values are dropped. Links from the time the site also held music land on

@@ -125,7 +125,7 @@ function toll(
   return { out, sources, end: t + first + (strikes - 1) * interval + bellTail(partials, ring) };
 }
 
-export const churchBell = oneShot({
+export const churchBell = /* @__PURE__ */ oneShot({
   id: "church-bell",
   title: "Church bell",
   category: "bells",
@@ -173,7 +173,7 @@ export function hourChime(): { notes: Array<[number, Quarter]>; length: number }
   return { notes, length: 4 * CHANGE };
 }
 
-export const bigBen = oneShot({
+export const bigBen = /* @__PURE__ */ oneShot({
   id: "big-ben",
   title: "Big Ben",
   category: "bells",
@@ -220,7 +220,7 @@ export const bigBen = oneShot({
   },
 });
 
-export const notreDameBell = oneShot({
+export const notreDameBell = /* @__PURE__ */ oneShot({
   id: "notre-dame-bell",
   title: "Notre-Dame bourdon",
   category: "bells",

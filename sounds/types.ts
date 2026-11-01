@@ -81,6 +81,20 @@ export interface LoopDesign extends DesignBase {
 
 export type SoundDesign = OneShotDesign | LoopDesign;
 
+/** What a design costs, measured by the build at its defaults; the game ignores it. */
+export interface SoundMetrics {
+  /** Minified bytes of the design bundled alone, the shared nodes it uses included. */
+  jsBytes: number;
+  /** Web Audio nodes created when it starts. */
+  nodesAtStart: number;
+  /** A loop's nodes created per second while it is ticked; null for a one-shot. */
+  nodesPerSecond: number | null;
+  /** A one-shot's length in seconds; null for a loop. */
+  seconds: number | null;
+  /** How many parameters it has. */
+  params: number;
+}
+
 /** A design without its code: what sounds.meta.json lists. */
 export interface SoundMeta {
   id: string;
@@ -89,6 +103,8 @@ export interface SoundMeta {
   description: string;
   kind: "oneShot" | "loop";
   params: SoundParam[];
+  /** Written by the build into sounds.meta.json; absent when read from source. */
+  metrics?: SoundMetrics;
 }
 
 /** export/sounds/sounds.meta.json. */

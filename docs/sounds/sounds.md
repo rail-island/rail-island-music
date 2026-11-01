@@ -7,7 +7,7 @@ parameters and categories, the export the game imports, and auditioning them on 
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
 `sounds/designs/trains.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
 `sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
-`generator/sounds.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`
+`generator/sounds.ts`, `generator/metrics.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`, `test/metrics.test.ts`
 **See also** - [../site/catalog-site.md](../site/catalog-site.md),
 [../guide/setup-and-build.md](../guide/setup-and-build.md); in the game,
 `rail-island-webapp` `docs/gameplay/sounds.md` (when each sound plays) and
@@ -136,8 +136,8 @@ of blasts:
 | `tunnel` | 1.3 s | 1.4 s |
 | `player` | 0.6 s | 0.8 s |
 
-To add a design, write it in `sounds/designs/` with `oneShot` or `loop`
-(`sounds/nodes.ts`), give it a `category`, and list it in `SOUNDS`
+To add a design, write it in `sounds/designs/` with `/* @__PURE__ */ oneShot` or `loop`
+(`sounds/nodes.ts`; [Metrics](#metrics)), give it a `category`, and list it in `SOUNDS`
 (`sounds/index.ts`) among its category's designs. It appears on the site's
 catalog at once. The game plays it once its code names the id.
 
@@ -149,7 +149,7 @@ script, kept for the game's import) writes `export/sounds/`:
 | File | What |
 |---|---|
 | `sounds.js` | every design as ONE ES module (esbuild): `SOUNDS`, `SOUNDS_FORMAT`, `CATEGORIES`, `soundById`, `categoryById`, `soundsIn`, `soundMeta`, `resolveValues` |
-| `sounds.meta.json` | `{ note, format, module, categories, sounds }`: every category, and every design's `id`, `title`, `category`, `description`, `kind` and `params`, without code |
+| `sounds.meta.json` | `{ note, format, module, categories, sounds }`: every category, and every design's `id`, `title`, `category`, `description`, `kind`, `params` and `metrics` ([Metrics](#metrics)), without code |
 | `sounds.d.ts` | `sounds/types.ts` followed by the module's exports |
 
 `SOUNDS_FORMAT` (1) is bumped when the contract changes incompatibly. The game's
@@ -157,6 +157,28 @@ import refuses a format it does not know. The game runs
 `pnpm import:sounds`, which builds this repository and mirrors `export/sounds/`
 into its committed `db/sounds/`. That import checks for a `rail-island-music`
 package with a `build:music` script, so both names stay.
+
+## Metrics
+
+`generator/metrics.ts` measures what each design costs, the way the factory's
+table shows a model's JS size and triangles. The build writes the result into
+each design's `metrics` in `sounds.meta.json`, and the site's table shows it
+([../site/catalog-site.md](../site/catalog-site.md)):
+
+| Field | What |
+|---|---|
+| `jsBytes` | minified bytes of the design bundled alone (esbuild), the shared `nodes.ts` code it uses included |
+| `nodesAtStart` | Web Audio nodes (gains, filters, oscillators, noise sources) created when it starts, at its defaults |
+| `nodesPerSecond` | a loop's nodes created per second while it is ticked for 10 s, 50 ms apart and 0.2 s ahead, as the game ticks it; `null` for a one-shot |
+| `seconds` | a one-shot's length at its defaults (`endsAt`); `null` for a loop |
+| `params` | how many parameters it has |
+
+The nodes are counted against a stub context, so every number is
+deterministic: they rank the designs by what they ask of the browser, but they
+are not a CPU profile. Each design is declared `/* @__PURE__ */ oneShot(...)` or
+`loop(...)`, which lets esbuild drop the designs beside it in the same module
+when it sizes one; keep that annotation on a new design. The field is additive:
+`SOUNDS_FORMAT` stays 1 and the game ignores it.
 
 ## Rendering a sound to a file
 

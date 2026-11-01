@@ -34,7 +34,7 @@ function knock(ctx: BaseAudioContext, dest: AudioNode, t: number, v: SoundValues
   return voiceOf(out, [thud, grit], t + length + 0.1);
 }
 
-export const editBuild = oneShot({
+export const editBuild = /* @__PURE__ */ oneShot({
   id: "edit-build",
   title: "Build",
   category: "editor",
@@ -43,7 +43,7 @@ export const editBuild = oneShot({
   play: (ctx, dest, t, v) => knock(ctx, dest, t, v, false),
 });
 
-export const editDemolish = oneShot({
+export const editDemolish = /* @__PURE__ */ oneShot({
   id: "edit-demolish",
   title: "Demolish",
   category: "editor",

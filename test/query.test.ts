@@ -7,22 +7,32 @@ const CATS = CATEGORIES.map((c) => c.id);
 describe("query string", () => {
   it("round-trips the list's filters and the open sound", () => {
     const v = parseView("?q=horn&cat=trains&kind=oneShot&sound=loco-horn", CATS);
-    expect(v).toEqual({ q: "horn", cat: "trains", kind: "oneShot", sound: "loco-horn" });
+    expect(v).toEqual({ q: "horn", cat: "trains", kind: "oneShot", sort: "category", dir: "asc", sound: "loco-horn" });
     expect(parseView(serializeView(v), CATS)).toEqual(v);
   });
 
   it("drops an unknown category or kind", () => {
-    expect(parseView("?cat=pianos&kind=piece", CATS)).toEqual({ q: "", cat: "", kind: "", sound: null });
+    expect(parseView("?cat=pianos&kind=piece", CATS)).toEqual({ q: "", cat: "", kind: "", sort: "category", dir: "asc", sound: null });
   });
 
   it("lands the links of the old music site on the list of sounds", () => {
     // the sound list filtered by its old group chip
     const s = parseView("?kind=effect&set=water&sound=waterfall", CATS);
-    expect(s).toEqual({ q: "", cat: "water", kind: "", sound: "waterfall" });
+    expect(s).toEqual({ q: "", cat: "water", kind: "", sort: "category", dir: "asc", sound: "waterfall" });
     expect(serializeView(s)).toBe("?cat=water&sound=waterfall");
     // a piece, a jingle and the old Sounds page open the list
     expect(parseView("?piece=maple-leaf-rag&ensemble=piano", CATS).sound).toBeNull();
     expect(parseView("?jingle=jingle-1", CATS).sound).toBeNull();
-    expect(parseView("?sounds", CATS)).toEqual({ q: "", cat: "", kind: "", sound: null });
+    expect(parseView("?sounds", CATS)).toEqual({ q: "", cat: "", kind: "", sort: "category", dir: "asc", sound: null });
+  });
+
+  it("keeps the sort, its direction defaulting to the column's own", () => {
+    const v = parseView("?sort=jsBytes", CATS);
+    expect([v.sort, v.dir]).toEqual(["jsBytes", "desc"]);
+    expect(serializeView(v)).toBe("?sort=jsBytes");
+    const asc = parseView("?sort=jsBytes&dir=asc", CATS);
+    expect(asc.dir).toBe("asc");
+    expect(serializeView(asc)).toBe("?sort=jsBytes&dir=asc");
+    expect(parseView("?sort=bogus&dir=sideways", CATS)).toMatchObject({ sort: "category", dir: "asc" });
   });
 });

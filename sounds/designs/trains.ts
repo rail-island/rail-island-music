@@ -37,7 +37,7 @@ export function hornPattern(kind: "horn" | "whistle", call: string): Array<[numb
   return [[0, 0.6, 1]];
 }
 
-export const locoHorn = oneShot({
+export const locoHorn = /* @__PURE__ */ oneShot({
   id: "loco-horn",
   title: "Locomotive horn",
   category: "trains",
@@ -77,7 +77,7 @@ export const locoHorn = oneShot({
   },
 });
 
-export const steamWhistle = oneShot({
+export const steamWhistle = /* @__PURE__ */ oneShot({
   id: "steam-whistle",
   title: "Steam whistle",
   category: "trains",
@@ -133,7 +133,7 @@ export function chuffLevel(intensity: number): number {
   return 0.3 + 0.7 * Math.min(1, Math.max(0, intensity));
 }
 
-export const steamChuff = loop({
+export const steamChuff = /* @__PURE__ */ loop({
   id: "steam-chuff",
   title: "Steam exhaust beat",
   category: "trains",
@@ -208,7 +208,7 @@ export function bellGap(n: number, interval: number, uneven: number): number {
   return interval * (n % 2 === 0 ? 1 - uneven : 1 + uneven);
 }
 
-export const crossingBell = loop({
+export const crossingBell = /* @__PURE__ */ loop({
   id: "crossing-bell",
   title: "Level crossing bell",
   category: "trains",
@@ -293,7 +293,7 @@ export function dieselLevel(rpm: number, load: number): number {
   return 0.35 + 0.3 * rpm + 0.35 * load;
 }
 
-export const dieselEngine = loop({
+export const dieselEngine = /* @__PURE__ */ loop({
   id: "diesel-engine",
   title: "Diesel engine",
   category: "trains",
