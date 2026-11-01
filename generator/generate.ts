@@ -1,6 +1,6 @@
 // `pnpm build:music`: writes the export folder (docs/music/export.md) - the
 // catalog, the source scores, every piece's default arrangement as note data
-// and as ABC, the synth bundle and the samples. Deterministic: the same
+// and as ABC, the synth bundle, the samples and the sound effects catalog. Deterministic: the same
 // sources give the same bytes.
 
 import { copyFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -10,6 +10,7 @@ import { writeAbc } from "../lib/abcWrite.ts";
 import { arrange } from "../lib/arrange.ts";
 import { catalogEntry } from "../lib/catalog.ts";
 import { PARAMS, SETS } from "../lib/params.ts";
+import { SOUNDS } from "../lib/sfx/sounds.ts";
 import type { SampleManifest } from "../synth/instruments.ts";
 import { loadPieces } from "./scores.ts";
 
@@ -21,7 +22,7 @@ const DRUM_SAMPLES: Record<string, string> = { "36": "kick", "38": "snare", "49"
 function main(): void {
   const out = EXPORT_DIR;
   rmSync(out, { recursive: true, force: true });
-  for (const d of ["music", "scores", "samples", "synth"]) mkdirSync(join(out, d), { recursive: true });
+  for (const d of ["music", "scores", "samples", "synth", "sounds"]) mkdirSync(join(out, d), { recursive: true });
 
   const pieces = loadPieces();
   const entries = [];
@@ -45,6 +46,9 @@ function main(): void {
   }
   copyFileSync(join("samples", "SOURCES.md"), join(out, "samples", "SOURCES.md"));
   writeFileSync(join(out, "samples", "samples.json"), JSON.stringify(manifest) + "\n");
+
+  // The sound effects are computed by the synth; only their catalog is a file.
+  writeFileSync(join(out, "sounds", "sounds.json"), JSON.stringify({ sounds: SOUNDS }, null, 1) + "\n");
 
   buildSync({
     entryPoints: ["synth/index.ts"],

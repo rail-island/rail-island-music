@@ -1,7 +1,7 @@
 # The catalog site (music.railisland.com)
 
 **Covers** - the Solid site that lists and plays every piece: the list, the piece page with parameters, player and score, the mini player, the URL state and the one stored setting.
-**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/PiecePage.tsx`, `src/ScoreView.tsx`, `src/MiniPlayer.tsx`, `src/music.ts`, `src/query.ts`, `src/music.css`, `src/favicon.svg`, `test/query.test.ts`
+**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/PiecePage.tsx`, `src/ScoreView.tsx`, `src/MiniPlayer.tsx`, `src/SoundsSection.tsx`, `src/music.ts`, `src/query.ts`, `src/music.css`, `src/favicon.svg`, `test/query.test.ts`
 **See also** - [../music/export.md](../music/export.md), [../music/synth.md](../music/synth.md), [../guide/deploy.md](../guide/deploy.md)
 
 The site follows the factory's catalog in look (the same dark palette, app bar
@@ -20,6 +20,11 @@ first time a piece plays.
 A search box (title, composer, set, year; every word must match), chips for the
 four sets, and a table: title, composer, year (hidden on a phone), set and the
 default arrangement's length. A row opens the piece.
+
+Under the table, **Train sounds** lists every sound effect with a button per
+variant (`src/SoundsSection.tsx`): a click computes the sound in the browser
+(the first time; kept after) and plays it at the stored volume, a second click
+stops it ([../music/sounds.md](../music/sounds.md)).
 
 ## The piece page
 

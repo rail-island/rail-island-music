@@ -1,7 +1,7 @@
 # Setup and build
 
 **Covers** - installing, the package scripts, what a build produces, the tests and the headless render tools.
-**Code** - `package.json`, `generator/generate.ts`, `generator/renderAudio.ts`, `generator/renderNotation.ts`, `generator/headless.ts`, `generator/prepareSamples.ts`, `vite.config.ts`, `test/`
+**Code** - `package.json`, `generator/generate.ts`, `generator/renderAudio.ts`, `generator/renderNotation.ts`, `generator/headless.ts`, `generator/prepareSamples.ts`, `generator/renderSound.ts`, `vite.config.ts`, `test/`
 **See also** - [deploy.md](deploy.md), [../music/export.md](../music/export.md)
 
 ## Install
@@ -41,6 +41,9 @@ the same sources give the same files.
 - `scores` - every piece loads, has its `SOURCES.md`, lasts 2 to 5 minutes in its
   default arrangement and stays within the recorded samples in every ensemble
   and in keys -3, 0 and +3; the sample set is complete;
+- `sounds` - the sound effects: sources listed, every variant renders,
+  determinism, the measured tram bell and steam beat, the Shinkansen pass
+  ([../music/sounds.md](../music/sounds.md));
 - `query` - the site's URL state and search.
 
 ## Hearing and seeing a piece headlessly
@@ -55,6 +58,12 @@ pnpm exec tsx generator/renderAudio.ts rondo-alla-turca /tmp/turca.mp3 ensemble=
 
 ```bash
 pnpm exec tsx generator/renderNotation.ts rondo-alla-turca /tmp/turca.png --bars=16
+```
+
+The sound effects render without a browser:
+
+```bash
+pnpm exec tsx generator/renderSound.ts steam-locomotive depart /tmp/steam.mp3
 ```
 
 `renderAudio` plays the arrangement through the real synth in an

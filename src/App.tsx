@@ -7,6 +7,7 @@ import { For, Show, createMemo, createResource, createSignal, onCleanup, onMount
 import { SETS } from "../lib/params.ts";
 import { MiniPlayer } from "./MiniPlayer";
 import { PiecePage } from "./PiecePage";
+import { SoundsSection } from "./SoundsSection";
 import { loadCatalog } from "./music";
 import { filterPieces, formatTime, parseView, serializeView, type ViewState } from "./query";
 import logoUrl from "./rail-island-logo.webp";
@@ -130,6 +131,7 @@ export function App() {
                       </For>
                     </tbody>
                   </table>
+                  <SoundsSection />
                 </section>
               }
             >

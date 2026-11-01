@@ -8,7 +8,9 @@ scores (ABC notation). A generator arranges each one for solo piano, a ragtime
 band, a brass band, a jazz band or chiptune, at three tempos, three lengths and
 seven keys, and exports note data plus a small WebAudio synth with CC0
 instrument samples. The site plays any arrangement and shows its score,
-following the playback.
+following the playback. The synth also computes train sounds (steam, diesel,
+old and modern electric, Shinkansen) and the Czech tram bell, tuned to real
+recordings kept in `sounds/`.
 
 ```bash
 pnpm install
@@ -19,4 +21,5 @@ pnpm dev
 ```
 
 Documentation: [docs/README.md](docs/README.md). Licence: MIT (code); the
-compositions are public domain, the samples CC0 (`samples/SOURCES.md`).
+compositions are public domain, the samples CC0 (`samples/SOURCES.md`); the reference recordings in
+`sounds/` keep their own licences (each folder's `SOURCES.md`).

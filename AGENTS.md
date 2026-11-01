@@ -3,7 +3,9 @@
 **Rail Island Music** generates music for Rail Island and hosts its catalog at
 `music.railisland.com`. Public-domain pieces are written once as ABC scores;
 the generator arranges them (ensemble, tempo, length, key), exports note data,
-the arranged score and a WebAudio synth with its samples. The game
+the arranged score and a WebAudio synth with its samples. The synth also
+computes sound effects - train sounds and the Czech tram bell
+(docs/music/sounds.md). The game
 (`rail-island-webapp`) does not import anything yet: whether it will is decided
 after listening (docs/specs/2026-10-30-music-generator-catalog.md).
 
@@ -45,6 +47,16 @@ document that owns it in the same change.** Conventions:
   `scores/<id>/` and is listed in its `SOURCES.md`; samples are listed in
   `samples/SOURCES.md`. Do not transcribe a piece from memory and present it as
   checked: say in `SOURCES.md` what it was made from.
+- **Downloading references is allowed, and whatever you download and use is
+  saved.** You may fetch reference recordings, scans and samples from the
+  internet (archive.org, Wikimedia Commons, IMSLP, ...). Save what you used in
+  the repository - a sound effect's recordings in `sounds/<id>/` - cut to the
+  part you used, and list each file in that folder's `SOURCES.md`: URL,
+  author, licence, download date, the cut, what you measured from it and what
+  you modelled without a measurement. References must be CC0, public domain or
+  CC BY (CC BY-SA only as a reference that is never shipped); nothing
+  downloaded is played or exported as it is. Keep a reference folder to a few
+  MB.
 - **`export/` and `dist/` are generated and gitignored.** Never commit them.
 - Every bug fix ships with a regression test in the suite that owns the behaviour.
 - Use ASCII in code and comments; no emoji.
@@ -67,7 +79,8 @@ about browser tooling and the user agreed first.
 Whenever you add or change a piece, an ensemble, a groove or the synth, **send
 the user the result in the chat** before you finish: an MP3 from
 `generator/renderAudio.ts` (a minute or so is enough) and the first bars of the
-score from `generator/renderNotation.ts` (docs/guide/setup-and-build.md). Write
+score from `generator/renderNotation.ts` (docs/guide/setup-and-build.md). For a
+sound effect, send its variants from `generator/renderSound.ts`. Write
 them to your scratchpad, never into the repository, send them with the chat's
 file-sending tool, caption each with the piece id and parameters, and say what
 you would improve next.

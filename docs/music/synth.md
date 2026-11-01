@@ -2,7 +2,7 @@
 
 **Covers** - the WebAudio synth that plays note data on the site and, later, in the game: the instruments, the sample set, scheduling, the Player API and offline rendering.
 **Code** - `synth/player.ts`, `synth/instruments.ts`, `synth/index.ts`, `samples/`, `generator/prepareSamples.ts`, `generator/renderAudio.ts`
-**See also** - [export.md](export.md), [arrangement.md](arrangement.md)
+**See also** - [export.md](export.md), [arrangement.md](arrangement.md), [sounds.md](sounds.md) (the sound effects the bundle also plays)
 
 ## Instruments
 
