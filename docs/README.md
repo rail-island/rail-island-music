@@ -6,11 +6,12 @@
 
 | File | What it covers |
 |---|---|
-| [guide/setup-and-build.md](guide/setup-and-build.md) | installing, the scripts, what `pnpm build` produces, the tests, the headless audio and notation renders |
-| [guide/deploy.md](guide/deploy.md) | the Cloudflare Worker at music.railisland.com, the GitHub Actions workflows, secrets |
-| [music/scores.md](music/scores.md) | the score sources: one folder per piece, `piece.json`, the ABC subset the parser reads, sources and the public-domain rule, adding a piece |
-| [music/arrangement.md](music/arrangement.md) | the four parameters, the form (repeats, endings, parts), the grooves and the generated bass, chords, drums and harmony, the ensembles, ranges, the arranged score written back as ABC |
-| [music/export.md](music/export.md) | the export folder the game would import: `catalog.json`, the note data format, the arranged ABC, the synth bundle, the samples |
-| [music/sounds.md](music/sounds.md) | the train sounds and the tram bell: the catalog, how a sound is computed, the reference recordings in `sounds/`, playing and rendering them |
-| [music/synth.md](music/synth.md) | the WebAudio synth: instruments, the sample set from VSCO 2 CE, scheduling, the Player API, offline rendering |
-| [site/catalog-site.md](site/catalog-site.md) | the music.railisland.com site: the list, the piece page, the score that follows the playback, the mini player, the URL state and the stored volume |
+| [guide/setup-and-build.md](guide/setup-and-build.md) | installing, the scripts, what `pnpm build` produces, the tests, rendering a sound headlessly |
+| [guide/deploy.md](guide/deploy.md) | the Cloudflare Worker at sound.railisland.com, the GitHub Actions workflows, secrets |
+| [sounds/sounds.md](sounds/sounds.md) | the game's sound designs: the contract, the designs, their categories and parameters, the `sounds/` export the game imports, auditioning them on the site |
+| [sounds/diesel.md](sounds/diesel.md) | the diesel engines: one loop per engine, its `state` that starts and stops it, the six engine profiles and the recordings they were matched to |
+| [sounds/references.md](sounds/references.md) | the reference recordings the designs were matched to: the excerpts in `references/`, their sources and licences, adding one, playing them on a sound's page |
+| [site/catalog-site.md](site/catalog-site.md) | the sound.railisland.com site: one sortable table with each sound's metrics, its filters, a sound's page, stopping playback on leaving, the URL state |
+
+`docs/specs/` and `docs/impl/` are planning records. The music generator they
+describe was removed; it is in the git history.

@@ -2,10 +2,11 @@
 import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
 
-// The site is a static Solid SPA. Its data is the generator's export folder,
-// served as Vite's publicDir: `pnpm build:music` writes export/ and `vite
-// build` copies it into dist/ as it stands, so the deployed site serves the very
-// files the game would import (docs/site/catalog-site.md).
+// The site is a static Solid SPA that plays the sound designs from source. The
+// generator's export folder is served as Vite's publicDir: `pnpm build:sounds`
+// writes export/ and `vite build` copies it into dist/ as it stands, so the
+// deployed site also serves the very files the game imports
+// (docs/site/catalog-site.md).
 export default defineConfig({
   plugins: [solid()],
   publicDir: "export",

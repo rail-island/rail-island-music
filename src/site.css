@@ -1,0 +1,373 @@
+/* The sound site. Its palette is the factory site's (dark M3 surfaces), copied
+   rather than imported -- the two evolve independently. */
+
+:root {
+  color-scheme: dark;
+  --m-surface: #101e29;
+  --m-surface-1: #192c39;
+  --m-surface-2: #243b49;
+  --m-on-surface: #eff6f5;
+  --m-on-surface-variant: #a7bac3;
+  --m-outline: rgba(255, 255, 255, 0.16);
+  --m-primary: #8fb6f2;
+  --m-error: #e38a87;
+  --m-state-hover: rgba(255, 255, 255, 0.08);
+  --m-radius-sm: 8px;
+  --m-radius-md: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--m-surface);
+  color: var(--m-on-surface);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--m-primary);
+}
+
+.sound-muted {
+  color: var(--m-on-surface-variant);
+}
+
+.sound-error {
+  color: var(--m-error);
+}
+
+.sound-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px 16px;
+  background: var(--m-surface-1);
+  border-bottom: 1px solid var(--m-outline);
+}
+
+.sound-bar__logo img {
+  display: block;
+  border-radius: 8px;
+}
+
+.sound-bar__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.sound-bar__sub {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--m-on-surface-variant);
+}
+
+.sound-main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px 16px 96px;
+}
+
+.sound-intro {
+  margin-top: 0;
+}
+
+.sound-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--m-outline);
+  border-radius: var(--m-radius-sm);
+  background: var(--m-surface-2);
+  color: var(--m-on-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sound-btn:hover:not(:disabled) {
+  background: var(--m-state-hover);
+}
+
+.sound-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sound-btn--play {
+  background: var(--m-primary);
+  color: #0b1620;
+  border-color: transparent;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.sound-btn--play:hover:not(:disabled) {
+  background: #a9c7f5;
+}
+
+
+.sound-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sound-search {
+  flex: 1 1 240px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--m-outline);
+  border-radius: var(--m-radius-sm);
+  background: var(--m-surface);
+  color: var(--m-on-surface);
+  font: inherit;
+}
+
+.sound-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sound-chip {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--m-outline);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--m-on-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sound-chip.is-on {
+  background: var(--m-surface-2);
+  border-color: var(--m-primary);
+}
+
+.sound-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sound-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--m-on-surface-variant);
+  border-bottom: 1px solid var(--m-outline);
+  padding: 8px;
+}
+
+.sound-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--m-outline);
+}
+
+.sound-row {
+  cursor: pointer;
+}
+
+.sound-row:hover {
+  background: var(--m-state-hover);
+}
+
+.sound-row a {
+  color: var(--m-on-surface);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.sound-col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sound-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 12px;
+  color: var(--m-on-surface-variant);
+}
+
+.sound-params {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sound-param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--m-on-surface-variant);
+}
+
+.sound-param select {
+  min-height: 44px;
+  padding: 0 8px;
+  border: 1px solid var(--m-outline);
+  border-radius: var(--m-radius-sm);
+  background: var(--m-surface-1);
+  color: var(--m-on-surface);
+  font: inherit;
+}
+
+.sound-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+
+
+
+
+
+
+
+
+
+
+.sound-footer {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px 16px 96px;
+  color: var(--m-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .sound-col-wide {
+    display: none;
+  }
+}
+
+/* --- A sound effect's detail (src/EffectPage.tsx) ------------------------- */
+
+.sound-spectrum {
+  margin: 0;
+}
+
+.sound-spectrum canvas {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  aspect-ratio: 720 / 200;
+  background: #050d14;
+  border: 1px solid var(--m-outline);
+  border-radius: var(--m-radius-sm);
+}
+
+.sound-spectrum figcaption {
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+.sound-id {
+  color: var(--m-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.sound-param input[type="range"] {
+  min-height: 32px;
+  accent-color: var(--m-primary);
+}
+
+/* --- The list: one sortable table (src/App.tsx) ------------------------- */
+.sound-chip__count {
+  margin-left: 6px;
+  color: var(--m-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+.sound-tablewrap {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.sound-sort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sound-caret {
+  display: inline-block;
+  min-width: 1em;
+  font-size: 0.7rem;
+}
+
+.sound-table th.sound-col-num {
+  text-align: right;
+}
+
+.sound-row__id {
+  color: var(--m-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+.sound-refs {
+  margin-top: 28px;
+  max-width: 720px;
+}
+
+.sound-refs-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.sound-ref {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--m-outline);
+  border-radius: var(--m-radius-md);
+  background: var(--m-surface-1);
+}
+
+.sound-ref-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.sound-ref-note {
+  margin: 4px 0 10px;
+}
+
+.sound-ref-player {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.sound-ref-source {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--m-on-surface-variant);
+  overflow-wrap: anywhere;
+}

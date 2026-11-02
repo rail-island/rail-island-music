@@ -1,24 +1,38 @@
 import { describe, expect, it } from "vitest";
-import type { CatalogEntry } from "../lib/catalog.ts";
-import { filterPieces, formatTime, parseView, serializeView } from "../src/query.ts";
+import { CATEGORIES } from "../sounds/index.ts";
+import { parseView, serializeView } from "../src/query.ts";
+
+const CATS = CATEGORIES.map((c) => c.id);
 
 describe("query string", () => {
-  it("round-trips the view and drops unknown parameter values", () => {
-    const v = parseView("?q=rag&set=ragtime&piece=maple-leaf-rag&ensemble=chiptune&key=%2B2&tempo=fast&t=12.5");
-    expect(v).toEqual({ q: "rag", set: "ragtime", piece: "maple-leaf-rag", params: { ensemble: "chiptune", key: "+2" }, t: 12.5 });
-    expect(parseView(serializeView(v))).toEqual(v);
+  it("round-trips the list's filters and the open sound", () => {
+    const v = parseView("?q=horn&cat=trains&kind=oneShot&sound=loco-horn", CATS);
+    expect(v).toEqual({ q: "horn", cat: "trains", kind: "oneShot", sort: "category", dir: "asc", sound: "loco-horn" });
+    expect(parseView(serializeView(v), CATS)).toEqual(v);
   });
 
-  it("filters by words and set", () => {
-    const e = (title: string, composer: string, set: string) => ({ title, composer, set, year: 1900 }) as CatalogEntry;
-    const list = [e("Maple Leaf Rag", "Scott Joplin", "ragtime"), e("Rondo alla Turca", "Mozart", "classical")];
-    expect(filterPieces(list, "joplin", "").map((p) => p.title)).toEqual(["Maple Leaf Rag"]);
-    expect(filterPieces(list, "", "classical").map((p) => p.title)).toEqual(["Rondo alla Turca"]);
-    expect(filterPieces(list, "maple turca", "")).toEqual([]);
+  it("drops an unknown category or kind", () => {
+    expect(parseView("?cat=pianos&kind=piece", CATS)).toEqual({ q: "", cat: "", kind: "", sort: "category", dir: "asc", sound: null });
   });
 
-  it("formats times", () => {
-    expect(formatTime(0)).toBe("0:00");
-    expect(formatTime(125.9)).toBe("2:05");
+  it("lands the links of the old music site on the list of sounds", () => {
+    // the sound list filtered by its old group chip
+    const s = parseView("?kind=effect&set=water&sound=waterfall", CATS);
+    expect(s).toEqual({ q: "", cat: "water", kind: "", sort: "category", dir: "asc", sound: "waterfall" });
+    expect(serializeView(s)).toBe("?cat=water&sound=waterfall");
+    // a piece, a jingle and the old Sounds page open the list
+    expect(parseView("?piece=maple-leaf-rag&ensemble=piano", CATS).sound).toBeNull();
+    expect(parseView("?jingle=jingle-1", CATS).sound).toBeNull();
+    expect(parseView("?sounds", CATS)).toEqual({ q: "", cat: "", kind: "", sort: "category", dir: "asc", sound: null });
+  });
+
+  it("keeps the sort, its direction defaulting to the column's own", () => {
+    const v = parseView("?sort=jsBytes", CATS);
+    expect([v.sort, v.dir]).toEqual(["jsBytes", "desc"]);
+    expect(serializeView(v)).toBe("?sort=jsBytes");
+    const asc = parseView("?sort=jsBytes&dir=asc", CATS);
+    expect(asc.dir).toBe("asc");
+    expect(serializeView(asc)).toBe("?sort=jsBytes&dir=asc");
+    expect(parseView("?sort=bogus&dir=sideways", CATS)).toMatchObject({ sort: "category", dir: "asc" });
   });
 });

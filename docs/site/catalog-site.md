@@ -1,55 +1,80 @@
-# The catalog site (music.railisland.com)
+# The catalog site (sound.railisland.com)
 
-**Covers** - the Solid site that lists and plays every piece: the list, the piece page with parameters, player and score, the mini player, the URL state and the one stored setting.
-**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/PiecePage.tsx`, `src/ScoreView.tsx`, `src/MiniPlayer.tsx`, `src/SoundsSection.tsx`, `src/music.ts`, `src/query.ts`, `src/music.css`, `src/favicon.svg`, `test/query.test.ts`
-**See also** - [../music/export.md](../music/export.md), [../music/synth.md](../music/synth.md), [../guide/deploy.md](../guide/deploy.md)
+**Covers** - the Solid site that lists and plays every sound Rail Island plays: one sortable table with each sound's cost metrics, its search, category and kind filters; a sound's page with its spectrogram; stopping what a page plays when it is left; the URL state.
+**Code** - `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/catalogList.ts`, `src/EffectPage.tsx`, `src/ReferenceList.tsx`, `src/references.ts`, `src/audition.ts`, `src/query.ts`, `src/site.css`, `src/favicon.svg`, `test/query.test.ts`, `test/catalogList.test.ts`, `test/audition.test.ts`
+**See also** - [../sounds/sounds.md](../sounds/sounds.md), [../guide/deploy.md](../guide/deploy.md)
 
 The site follows the factory's catalog in look (the same dark palette, app bar
-and table) and stack (Solid, Vite). English only.
+and table), in shape (one filterable list, a detail per item) and in stack
+(Solid, Vite). English only.
 
 ## Data
 
-`App.tsx` fetches `/catalog.json` once; a missing catalog says to run
-`pnpm build:music`. A piece page fetches `/scores/<id>.abc` and arranges it in
-the browser with `lib/` - the generator's own code - for the chosen
-parameters, then writes the arranged ABC. Samples load from `/samples/` the
-first time a piece plays.
+The designs themselves (`sounds/`), bundled into the site from source, so a
+page plays the very code the game imports. The build also copies
+`export/sounds/` into `dist/`, so the deployed site serves the bundle the game
+imports. The one thing fetched is that export's `sounds/sounds.meta.json`, for
+the metrics the build measured ([../sounds/sounds.md](../sounds/sounds.md#metrics)):
+until it arrives, or if it is missing, the metric cells show a dash.
 
 ## The list
 
-A search box (title, composer, set, year; every word must match), chips for the
-four sets, and a table: title, composer, year (hidden on a phone), set and the
-default arrangement's length. A row opens the piece.
+Every sound design in **one table**, the way the factory lists its models
+(`src/catalogList.ts`):
+- **Search box** - every word must match the title, id, description, category
+  or kind (`filterSounds`).
+- **Kind chips** - All, One-shots, Loops.
+- **Category chips** - All and each category of `CATEGORIES`
+  ([../sounds/sounds.md](../sounds/sounds.md#categories)), each with the number
+  of sounds it holds (`countByCategory`) and its description as a tooltip. A
+  second click on the chosen chip clears it.
+- **Columns** (`COLUMNS`) - title (with the id under it), category, kind, JS
+  size, nodes at start, nodes per second, length in seconds and the number of
+  parameters. The last three are hidden on a phone. A row's tooltip is its
+  description.
+- **Sorting** (`sortSounds`) - a header click sorts on its column; a second
+  click flips the direction. Text starts ascending, numbers descending. The
+  default is category, in the order of `CATEGORIES`, which reads like the old
+  grouped list. A missing value (a loop's length, metrics not loaded) sorts
+  last in both directions, and ties keep the order of `SOUNDS`.
 
-Under the table, **Train sounds** lists every sound effect with a button per
-variant (`src/SoundsSection.tsx`): a click computes the sound in the browser
-(the first time; kept after) and plays it at the stored volume, a second click
-stops it ([../music/sounds.md](../music/sounds.md)).
+A row opens the sound's page, and the app bar's back arrow returns to the list
+with its filters.
 
-## The piece page
+## A sound's page (`EffectPage`)
 
-- the facts: composer, year, set, key and meter;
-- four pickers for the parameters, the piece's defaults marked; a change
-  re-arranges, and while the piece plays it carries on in the new arrangement at
-  the same point of the piece;
-- Play/Pause, Stop, a progress slider (seeks), the time, and a volume slider;
-- the arranged score, drawn by abcjs on a light sheet. Bars are numbered in
-  reading order from the first voice's line and measure classes, so the bar
-  under the playback is highlighted in every voice and scrolled into view, and
-  a click on a note or rest of a bar seeks there.
+- **Facts** - its category, one-shot or loop, its id and its description.
+- **Controls** - a slider for each number parameter and a picker for each
+  choice; Play (Start/Stop for a loop); Defaults. A running loop takes a change
+  at once.
+- **Spectrogram** - a live, scrolling spectrogram of what it plays: time left
+  to right, 0-8 kHz bottom to top, louder brighter.
+  - It is drawn from an analyser at the end of the page's own audio chain, only
+    while something sounds (a loop while it runs, a one-shot until it ends).
+  - The last picture stays.
+- **Reference recordings** - the recordings the sound was matched to, each with
+  a player, what it gave the design and its source and licence
+  ([../sounds/references.md](../sounds/references.md)). A recording plays
+  through the same chain, so the spectrogram draws it too. It takes turns with
+  the design: a recording pauses the other recordings and stops a running loop,
+  Play or Start pauses the recordings. A sound without references shows none.
 
-## The mini player
+**Leaving stops it.** What the page plays is held by an audition
+(`src/audition.ts`): the running loop, ticked every 50 ms 0.2 s ahead, and every
+one-shot still ringing (and the page pauses its reference recordings). When the page is left - the back arrow, the browser's
+Back, another sound opened from the URL - the page is unmounted (the detail is
+a keyed `<Show>`, so another sound is another page) and `stopAll` fades out the
+loop and every one-shot. A tolling bell or a horn's call no longer rings on
+over the list.
 
-While a piece plays and another page is shown, a bar at the bottom keeps its
-title, Play/Pause and progress; its title opens the piece again. There is one
-player for the whole site (`src/music.ts`).
+## URL state
 
-## URL state and storage
+Everything is in the query string (`src/query.ts`):
+- the list: `q`, `cat` (a category id), `kind` (`oneShot`, `loop`), `sort` (a
+  column key; absent for category) and `dir` (absent for the column's own
+  direction);
+- the open sound: `sound=<id>`.
 
-Everything is in the query string (`src/query.ts`): `q` and `set` for the list,
-`piece`, the four parameter names, and `t` - the position in seconds, written
-when playback pauses. Unknown parameter values are dropped. Back walks it.
-
-The only stored setting is the player volume: one localStorage key,
-`rail-island-music.volume`, a number from 0 to 1, read on load and written on
-change; a missing, broken or blocked value falls back to 0.8.
+Unknown values are dropped. Links from the time the site also held music land on
+the list: `set=<category>` is read as `cat`, while `kind=effect`, `?sounds`, a
+`piece` or a `jingle` are ignored. Back walks all of it. Nothing is stored.
