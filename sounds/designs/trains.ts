@@ -78,6 +78,18 @@ export const locoHorn = /* @__PURE__ */ oneShot({
   },
 });
 
+/**
+ * The whistle's pipes: [ratio to `pitch`, level]. The chord's shape is the one
+ * measured in a recorded steam whistle (SSE library: partials at 516, 1446,
+ * 2080 and 2497 Hz, the top one loudest); `pitch` is its second pipe.
+ */
+export const WHISTLE_PIPES: ReadonlyArray<[number, number]> = [
+  [0.357, 0.077],
+  [1, 0.095],
+  [1.438, 0.095],
+  [1.727, 0.146],
+];
+
 export const steamWhistle = /* @__PURE__ */ oneShot({
   id: "steam-whistle",
   title: "Steam whistle",
@@ -99,11 +111,7 @@ export const steamWhistle = /* @__PURE__ */ oneShot({
       // Three pipes over a breath of steam, sliding up onto the note.
       const env = gain(ctx);
       env.connect(out);
-      const pipes: Array<[number, number]> = [
-        [1, 0.16],
-        [1.19, 0.11],
-        [1.5, 0.07],
-      ];
+      const pipes = WHISTLE_PIPES;
       for (const [ratio, level] of pipes) {
         const osc = ctx.createOscillator();
         osc.type = "sine";
@@ -274,5 +282,101 @@ export const crossingBell = /* @__PURE__ */ loop({
         }
       },
     };
+  },
+});
+
+/**
+ * The bell of a Czech Tatra tram (T3, KT4): a hammer driven at the mains
+ * frequency strikes a gong 50 times a second while the driver holds the
+ * button. Partials and levels measured in a KT4DM's bell at Frankfurt (Oder):
+ * 1565, 3647, 6230 (the loudest), 9295 and 12452 Hz, the ring steady for as
+ * long as it is held. `decay` (time constant, s, once released) is estimated.
+ */
+export const TRAM_BELL_PARTIALS: ReadonlyArray<{ freq: number; level: number; decay: number }> = [
+  { freq: 1565, level: 0.56, decay: 0.9 },
+  { freq: 3647, level: 0.25, decay: 0.45 },
+  { freq: 6230, level: 1, decay: 0.4 },
+  { freq: 9295, level: 0.71, decay: 0.28 },
+  { freq: 12452, level: 0.13, decay: 0.16 },
+];
+export const TRAM_BELL_STRIKES = 50;
+
+/** The presses of a call: [start offset s, length s]. Two short rings before leaving a stop, as Czech drivers ring. */
+export function tramBellPresses(call: string): Array<[number, number]> {
+  if (call === "warning") return [[0, 2.8]];
+  return [
+    [0, 0.27],
+    [0.51, 0.29],
+  ];
+}
+
+export const tramBell = /* @__PURE__ */ oneShot({
+  id: "tram-bell",
+  title: "Tram bell",
+  category: "trains",
+  description: "The bell of a Czech Tatra tram: two short rings before it leaves a stop, or one long ring as a warning.",
+  params: [
+    {
+      name: "call",
+      title: "Call",
+      kind: "choice",
+      values: [
+        { value: "departure", title: "Departure (two short rings)" },
+        { value: "warning", title: "Warning (one long ring)" },
+      ],
+      default: "departure",
+    },
+    LEVEL,
+  ],
+  play(ctx, dest, t, v) {
+    const out = gain(ctx, num(v, "level") * 0.128);
+    out.connect(dest);
+    const presses = tramBellPresses(choice(v, "call"));
+    const end = presses[presses.length - 1]!;
+    const stopAt = t + end[0] + end[1] + 5 * Math.max(...TRAM_BELL_PARTIALS.map((p) => p.decay));
+    const sources: AudioScheduledSourceNode[] = [];
+    // The hammer: a 50 Hz sawtooth, rippling the ring and ticking while held.
+    const hammer = ctx.createOscillator();
+    hammer.type = "sawtooth";
+    hammer.frequency.value = TRAM_BELL_STRIKES;
+    const depth = gain(ctx);
+    hammer.connect(depth);
+    hammer.start(t);
+    hammer.stop(stopAt);
+    sources.push(hammer);
+    const ring = gain(ctx, 0.8);
+    ring.connect(out);
+    depth.connect(ring.gain);
+    const tick = noiseSource(ctx, true);
+    const hp = filter(ctx, "highpass", 4000);
+    const tickG = gain(ctx);
+    tick.connect(hp).connect(tickG).connect(out);
+    depth.connect(tickG.gain);
+    tick.start(t);
+    tick.stop(stopAt);
+    sources.push(tick);
+    const partials = TRAM_BELL_PARTIALS.map((p) => {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = p.freq;
+      const g = gain(ctx);
+      osc.connect(g).connect(ring);
+      osc.start(t);
+      osc.stop(stopAt);
+      sources.push(osc);
+      return { g, p };
+    });
+    for (const [offset, length] of presses) {
+      const a = t + offset;
+      const b = a + length;
+      // The hammer swings up over a few strikes, then the gong rings out.
+      for (const { g, p } of partials) {
+        g.gain.setTargetAtTime(p.level, a, 0.03);
+        g.gain.setTargetAtTime(0, b, p.decay);
+      }
+      depth.gain.setTargetAtTime(0.2, a, 0.01);
+      depth.gain.setTargetAtTime(0, b, 0.005);
+    }
+    return voiceOf(out, sources, stopAt);
   },
 });

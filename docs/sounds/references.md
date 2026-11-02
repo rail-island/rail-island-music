@@ -23,8 +23,8 @@ Each reference is an **excerpt** of a recording, not the whole of it:
   another, with a 20 Hz high-pass and short fades at both ends;
 - a kebab-case name: `<what>-<doing>.mp3`.
 
-A file stays under 400 kB and all of them under 5 MB (tested). They are 13
-files, about 3 MB.
+A file stays under 400 kB and all of them under 5 MB (tested). They are 19
+files, about 4.2 MB.
 
 ## The list (`src/references.ts`)
 
@@ -36,7 +36,7 @@ them. A reference has:
 | `file` | the excerpt's name in `references/` |
 | `title` | what it is, in a few words |
 | `note` | what the design took from it, and how long the excerpt is of how long the recording |
-| `source` | the recording's `title`, `url`, `author` and `licence` (`CC0 1.0` or `CC BY 4.0`) |
+| `source` | the recording's `title`, `url`, `author` and `licence` (`CC0 1.0`, `CC BY 4.0`, `CC BY 3.0` or `Public Domain Mark 1.0`) |
 
 One excerpt may serve several sounds (a passing diesel is a reference for the
 mainline and the two-stroke engine). Vite imports each file as an asset
@@ -51,15 +51,24 @@ mainline and the two-stroke engine). Vite imports each file as an asset
 | `diesel-engine-two-stroke` | a diesel train arriving and idling; passing; with its air horn |
 | `diesel-engine-bus` | an old bus starting; revving and stopping; a bus in the street |
 | `diesel-engine-truck` | a truck idling and stopping; a fire truck idling; a diesel truck revving; an old truck working hard; a large truck starting |
+| `steam-chuff` | a steam engine starting and pulling away (SSE library, CC0) |
+| `steam-whistle` | a steam train's whistle (SSE library, CC0) |
+| `electric-engine-resistor` | an electric locomotive idling at Kosice (radio aporee, Public Domain Mark) |
+| `electric-engine-converter` | an ICE pulling out of Berlin Hbf (radio aporee, CC BY 3.0) |
+| `electric-engine-shinkansen` | a Shinkansen passing Odawara (radio aporee, Public Domain Mark) |
+| `tram-bell` | a Tatra KT4DM's bell at Frankfurt (Oder) (radio aporee, CC BY 3.0) |
 
-All but the mine locomotive are CC0 sound effects of the USC Cinema and
-Sunset Editorial collections on archive.org. The crossing bell was matched to a
+The diesel references but the mine locomotive are CC0 sound effects of the
+USC Cinema and Sunset Editorial collections on archive.org; the steam ones come
+from the SSE library there, and the electric, Shinkansen and tram ones are radio
+aporee field recordings, also on archive.org. The crossing bell was matched to a
 recording of a Czech crossing bell that is not in the repository.
 
 ## Adding a reference
 
 1. **The licence.** Only a recording free to keep in git and to play publicly:
-   CC0 or CC BY (then credit the author, as `source.author`). Not a recording
+   CC0, the Public Domain Mark, or CC BY (then credit the author, as
+   `source.author`). Not a recording
    of unknown licence, and not one from a commercial library.
 2. **The excerpt.** Cut and encode it as above, for example:
 
