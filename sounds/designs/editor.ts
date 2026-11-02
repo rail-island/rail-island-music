@@ -4,8 +4,14 @@
 import { LEVEL, filter, gain, noiseSource, num, oneShot, strike, voiceOf } from "../nodes.ts";
 import type { SoundValues, Voice } from "../types.ts";
 
+/**
+ * The editor sounds' trim under `level`: they play at the listener, unattenuated,
+ * on every committed edit, so they sit about 10 dB under the other designs.
+ */
+export const EDIT_TRIM = 0.3;
+
 function knock(ctx: BaseAudioContext, dest: AudioNode, t: number, v: SoundValues, demolish: boolean): Voice {
-  const out = gain(ctx, num(v, "level"));
+  const out = gain(ctx, EDIT_TRIM * num(v, "level"));
   out.connect(dest);
   const thud = ctx.createOscillator();
   thud.type = "sine";
