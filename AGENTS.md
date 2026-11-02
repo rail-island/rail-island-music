@@ -46,6 +46,13 @@ document that owns it in the same change.** Conventions:
   iteration in what is written.
 - **Every design has a category** of `CATEGORIES` (`sounds/index.ts`), and
   `SOUNDS` keeps each category's designs together, in category order.
+- **Downloading references is allowed, and what you use is saved.** You may
+  fetch recordings from the internet (archive.org, Wikimedia Commons, ...) to
+  match a design against. Keep every recording a design was matched to as an
+  excerpt in `references/`, listed in `src/references.ts` with its source,
+  author and licence (CC0, Public Domain Mark or CC BY), and say in the design's
+  comment and in docs/sounds/ what was measured from it and what was modelled
+  without a measurement (docs/sounds/references.md).
 - **No music.** Do not bring back scores, samples or a music synth unless asked.
 - **`export/` and `dist/` are generated and gitignored.** Never commit them.
 - Every bug fix ships with a regression test in the suite that owns the behaviour.

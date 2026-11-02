@@ -6,7 +6,8 @@
 import { bigBen, churchBell, notreDameBell } from "./designs/bells.ts";
 import { editBuild, editDemolish } from "./designs/editor.ts";
 import { shipHorn } from "./designs/ships.ts";
-import { crossingBell, locoHorn, steamChuff, steamWhistle } from "./designs/trains.ts";
+import { crossingBell, locoHorn, steamChuff, steamWhistle, tramBell } from "./designs/trains.ts";
+import { electricEngineConverter, electricEngineResistor, electricEngineShinkansen } from "./designs/electric.ts";
 import {
   dieselEngineBus,
   dieselEngineMainline,
@@ -33,7 +34,11 @@ export const SOUNDS: readonly SoundDesign[] = [
   dieselEngineTwoStroke,
   dieselEngineBus,
   dieselEngineTruck,
+  electricEngineResistor,
+  electricEngineConverter,
+  electricEngineShinkansen,
   crossingBell,
+  tramBell,
   shipHorn,
   riverRapids,
   waterfall,
@@ -49,7 +54,7 @@ export const SOUNDS: readonly SoundDesign[] = [
 
 /** Every category, in list order; SOUNDS keeps each category's designs together in this order. */
 export const CATEGORIES: readonly SoundCategoryInfo[] = [
-  { id: "trains", title: "Trains", description: "Locomotives and the railway: horns, whistles, the exhaust beat, diesel engines (railcars, shunters, mainline locomotives, buses and trucks) running, starting and stopping, the level crossing's bell." },
+  { id: "trains", title: "Trains", description: "Locomotives and the railway: horns, whistles, the exhaust beat, diesel engines (railcars, shunters, mainline locomotives, buses and trucks) running, starting and stopping, electric locomotives and trains old and new, the Shinkansen, the level crossing's bell and the tram bell." },
   { id: "ships", title: "Ships", description: "Vessels in port and at sea." },
   { id: "water", title: "Water", description: "Ambient water, played while it is in view: rivers, waterfalls, springs and the sea." },
   { id: "nature", title: "Nature", description: "Ambient life of the land: woods and their birds." },

@@ -6,7 +6,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CATEGORIES, SOUNDS, SOUNDS_FORMAT, resolveValues, soundById, soundsIn } from "../sounds/index.ts";
-import { BELL_PARTIALS, bellGap, chuffLevel, hornPattern } from "../sounds/designs/trains.ts";
+import { BELL_PARTIALS, TRAM_BELL_PARTIALS, TRAM_BELL_STRIKES, WHISTLE_PIPES, bellGap, chuffLevel, hornPattern, tramBellPresses } from "../sounds/designs/trains.ts";
+import { CONVERTER_RISE, CONVERTER_TONES, NOTCH_BELOW, gearMesh, rollingLevel } from "../sounds/designs/electric.ts";
 import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
 import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
@@ -209,6 +210,89 @@ describe("the loops", () => {
     expect(1590 * (twin.ratio - 1)).toBeLessThan(10);
     expect(bellGap(0, 0.49, 0.085) + bellGap(1, 0.49, 0.085)).toBeCloseTo(0.98, 6);
     expect(bellGap(0, 0.49, 0.085)).toBeLessThan(bellGap(1, 0.49, 0.085));
+  });
+});
+
+describe("the electric engines", () => {
+  /** The times the resistor locomotive's controller clacks: its clack gain struck to 1.6. */
+  function clacks(values: SoundValues, ticks: Array<[number, number]>): number[] {
+    const { ctx, dest } = stubContext();
+    const at: number[] = [];
+    const spy = ctx as unknown as { createGain: () => { gain: Record<string, unknown> } };
+    const make = spy.createGain;
+    spy.createGain = () => {
+      const g = make();
+      g.gain.setTargetAtTime = (v: number, t: number) => {
+        if (v === 1.6) at.push(t);
+      };
+      return g;
+    };
+    const d = soundById("electric-engine-resistor")!;
+    if (d.kind !== "loop") throw new Error("a loop");
+    const voice = d.start(ctx, dest, 0, values);
+    for (const [now, horizon] of ticks) voice.tick(now, horizon);
+    return at;
+  }
+
+  it("clack up a notch every 1.1-1.4 s only while pulling hard at low speed, and only as far ahead as asked", () => {
+    const at = clacks({ speed: 0.2, load: 1 }, [[0, 5]]);
+    expect(at.length).toBeGreaterThanOrEqual(3);
+    for (let i = 1; i < at.length; i++) {
+      expect(at[i]! - at[i - 1]!).toBeGreaterThanOrEqual(1.1);
+      expect(at[i]! - at[i - 1]!).toBeLessThanOrEqual(1.4);
+    }
+    expect(Math.max(...at)).toBeLessThan(5);
+    // ticking again over time already scheduled adds nothing
+    expect(clacks({ speed: 0.2, load: 1 }, [[0, 5], [1, 2]])).toEqual(at);
+    expect(clacks({ speed: NOTCH_BELOW + 0.1, load: 1 }, [[0, 5]])).toEqual([]);
+    expect(clacks({ speed: 0.2, load: 0.3 }, [[0, 5]])).toEqual([]);
+    expect(clacks({ speed: 0, load: 1 }, [[0, 5]])).toEqual([]);
+  });
+
+  it("whine at the gears' mesh frequency, in step with the speed", () => {
+    expect(gearMesh(0)).toBe(0);
+    expect(gearMesh(20) / gearMesh(10)).toBeCloseTo(2, 9);
+    // 79 teeth on 1.25 m wheels: about 400 Hz at 72 km/h
+    expect(gearMesh(20)).toBeGreaterThan(390);
+    expect(gearMesh(20)).toBeLessThan(410);
+    expect(rollingLevel(0)).toBe(0);
+    expect(rollingLevel(1)).toBe(1);
+  });
+
+  it("keep the measured converter tones of the ICE: 1180 Hz the strongest, rising 8 %", () => {
+    expect(CONVERTER_TONES.map((c) => c.freq)).toEqual([1180, 1830, 2420, 2750, 3070]);
+    expect([...CONVERTER_TONES].sort((a, b) => b.level - a.level)[0]!.freq).toBe(1180);
+    expect(CONVERTER_RISE).toBeCloseTo(0.08, 6);
+  });
+});
+
+describe("the tram bell", () => {
+  it("rings twice, short, before departure, and once long as a warning", () => {
+    const dep = tramBellPresses("departure");
+    expect(dep).toHaveLength(2);
+    expect(dep[1]![0]).toBeGreaterThan(dep[0]![0] + dep[0]![1]);
+    for (const [, length] of dep) expect(length).toBeLessThan(0.5);
+    expect(tramBellPresses("warning")).toEqual([[0, 2.8]]);
+  });
+
+  it("keeps the measured bell of the KT4DM: 6230 Hz loudest, 9295 Hz next, struck 50 times a second", () => {
+    const byLevel = [...TRAM_BELL_PARTIALS].sort((a, b) => b.level - a.level);
+    expect(byLevel.map((p) => p.freq)).toEqual([6230, 9295, 1565, 3647, 12452]);
+    expect(TRAM_BELL_STRIKES).toBe(50);
+  });
+
+  it("ends by itself once rung out, longer for the warning", () => {
+    const d = soundById("tram-bell")!;
+    if (d.kind !== "oneShot") throw new Error("a one-shot");
+    const short = d.play(stubContext().ctx, stubContext().dest, 0, { call: "departure" }).endsAt;
+    const long = d.play(stubContext().ctx, stubContext().dest, 0, { call: "warning" }).endsAt;
+    expect(short).toBeGreaterThan(0.8);
+    expect(long).toBeGreaterThan(short);
+  });
+
+  it("whistles in the chord shape measured in a steam whistle, the top pipe loudest", () => {
+    expect(WHISTLE_PIPES.map(([r]) => r)).toEqual([0.357, 1, 1.438, 1.727]);
+    expect([...WHISTLE_PIPES].sort((a, b) => b[1] - a[1])[0]![0]).toBe(1.727);
   });
 });
 

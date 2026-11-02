@@ -5,7 +5,7 @@
 // licence. The game never sees any of this: it is site-only.
 
 /** A licence a reference may carry: free to keep in git and to play on the site. */
-export type ReferenceLicence = "CC0 1.0" | "CC BY 4.0";
+export type ReferenceLicence = "CC0 1.0" | "CC BY 4.0" | "CC BY 3.0" | "Public Domain Mark 1.0";
 
 export interface Reference {
   /** The excerpt's file name in references/. */
@@ -20,6 +20,8 @@ export interface Reference {
 const LICENCE_URLS: Record<ReferenceLicence, string> = {
   "CC0 1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
   "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/",
+  "CC BY 3.0": "https://creativecommons.org/licenses/by/3.0/",
+  "Public Domain Mark 1.0": "https://creativecommons.org/publicdomain/mark/1.0/",
 };
 
 export function licenceUrl(l: ReferenceLicence): string {
@@ -114,6 +116,67 @@ const R = {
     note: "Started, then idling. 30 s of 97.",
     source: { title: "R19-48 Old Large Truck Start Idle Out", url: archive("Red_Library_Trucks"), author: USC, licence: "CC0 1.0" },
   },
+  steamStarts: {
+    file: "steam-starts-pulls-away.mp3",
+    title: "Steam engine starting and pulling away",
+    note: "The beat from about 3 a second, as it gets moving, to 5; it reaches 9-10 at speed later in the recording. 40 s of 110.",
+    source: {
+      title: "TRNSteam_Steam engine train starts and pulls away",
+      url: archive("SSE_Library_TRAINS"),
+      author: "SSE Library (archive.org)",
+      licence: "CC0 1.0",
+    },
+  },
+  steamWhistle: {
+    file: "steam-whistle-pulls-out.mp3",
+    title: "Steam train whistle",
+    note: "The whistle's chord: partials at 516, 1446, 2080 and 2497 Hz, the top one loudest; the design's pipes keep that shape. 14 s of 60.",
+    source: {
+      title: "TRNSteam_Steam train whistles then pulls out",
+      url: archive("SSE_Library_TRAINS"),
+      author: "SSE Library (archive.org)",
+      licence: "CC0 1.0",
+    },
+  },
+  tramBellKt4: {
+    file: "tram-bell-tatra-kt4dm.mp3",
+    title: "Tatra KT4DM tram, its bell as the doors close",
+    note: "A Czech-built tram at a stop in Frankfurt (Oder); the bell rings for 2.8 s from 5.7 s in. Its partials (1565, 3647, 6230, 9295, 12452 Hz) and 50 strikes a second are the design's. 16 s of 74.",
+    source: {
+      title: "Tram station \"Stadion\", Frankfurt (Oder) - Old Tatra KT4DM tram at the station",
+      url: archive("aporee_64341_74254"),
+      author: "Niklas Dahlmann (radio aporee)",
+      licence: "CC BY 3.0",
+    },
+  },
+  electricIdle: {
+    file: "electric-loco-idle-station.mp3",
+    title: "Electric locomotive idling at Kosice",
+    note: "A diesel-hauled train leaves while an electric locomotive idles at the same platform: its blowers set the design's level against the rest. 25 s of 226.",
+    source: { title: "Trains at Kosice Station", url: archive("aporee_54418_62243"), author: "Rastislav Gulasa (radio aporee)", licence: "Public Domain Mark 1.0" },
+  },
+  iceDeparting: {
+    file: "electric-train-departing.mp3",
+    title: "ICE pulling out of Berlin Hauptbahnhof",
+    note: "The converters' cluster of tones near 1180, 1830, 2420, 2750 and 3070 Hz rising about 8 %, over a steady 620 Hz. 30 s of 329.",
+    source: {
+      title: "Berlin. Hauptbahnhof - ICE am Gleis 7",
+      url: archive("aporee_21357_24792"),
+      author: "Fritz Schlueter (radio aporee)",
+      licence: "CC BY 3.0",
+    },
+  },
+  shinkansenPassing: {
+    file: "shinkansen-passing.mp3",
+    title: "Shinkansen passing Odawara",
+    note: "A set passing the platform without stopping, 6 s in: a flat block of broadband noise, most of it below 1.2 kHz, about six seconds long. 22 s of 386.",
+    source: {
+      title: "Odawara Station - Shinkansen train leaving for Nagoya",
+      url: archive("aporee_70028_81566"),
+      author: "Flavien Gillie (radio aporee)",
+      licence: "Public Domain Mark 1.0",
+    },
+  },
 } satisfies Record<string, Reference>;
 
 /** The references of each sound id, in the order the page lists them. */
@@ -125,6 +188,12 @@ export const REFERENCES: Readonly<Record<string, readonly Reference[]>> = {
   "diesel-engine-two-stroke": [R.trainIdle, R.trainPassing, R.trainHorn],
   "diesel-engine-bus": [R.busStart, R.busRevStop, R.busCity],
   "diesel-engine-truck": [R.truckIdleStop, R.truckFireIdle, R.truckRevs, R.truckWorking, R.truckStart],
+  "steam-chuff": [R.steamStarts],
+  "steam-whistle": [R.steamWhistle],
+  "electric-engine-resistor": [R.electricIdle],
+  "electric-engine-converter": [R.iceDeparting],
+  "electric-engine-shinkansen": [R.shinkansenPassing],
+  "tram-bell": [R.tramBellKt4],
 };
 
 export function referencesFor(soundId: string): readonly Reference[] {

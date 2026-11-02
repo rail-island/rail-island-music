@@ -5,7 +5,7 @@ Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
-`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
+`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
 `sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/metrics.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`, `test/metrics.test.ts`
 **See also** - [diesel.md](diesel.md) (the diesel engines), [../site/catalog-site.md](../site/catalog-site.md),
@@ -57,10 +57,14 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | Id | Kind | Parameters | What it is |
 |---|---|---|---|
 | `loco-horn` | one-shot | `pitch` 150-500 Hz, `call`, `level` | the two-tone air horn of a diesel, an electric or a multiple unit: a three-reed sawtooth chord (root, major third, fifth) through a soft low-pass |
-| `steam-whistle` | one-shot | `pitch` 400-1100 Hz, `call`, `level` | a steam locomotive's whistle: three sine pipes sliding up onto the note, over band-passed noise |
+| `steam-whistle` | one-shot | `pitch` 400-1100 Hz, `call`, `level` | a steam locomotive's whistle: four sine pipes in the chord shape measured in a recorded whistle (`WHISTLE_PIPES`: x0.357, 1, 1.438, 1.727, the top loudest) sliding up onto the note, over band-passed noise |
 | `steam-chuff` | loop | `rate` 0-12 beats/s, `intensity` 0..1, `level` | the exhaust beat: looped noise through a band-pass, gated by one struck envelope per beat; every fourth beat heavier; loudness `0.3 + 0.7 * intensity` |
 | `diesel-engine-railcar`, `diesel-engine-shunter`, `diesel-engine-mainline`, `diesel-engine-two-stroke`, `diesel-engine-bus`, `diesel-engine-truck` | loop | `rpm` 0..1 (0.4), `load` 0..1 (0.5), `size` 0..1 (0.5), `state` (`run`, `start`, `stop`, `off`), `level` | a diesel engine, one loop per profile (a railcar's six, a shunter's six, a mainline V12, a two-stroke V16, a bus's six, a truck's V8), matched to recordings: a cycle wave of its cylinders' uneven pulses, the knock and the exhaust's breath gated in step, a turbo and, for the truck, a fan. `state` starts it and shuts it down inside the voice ([diesel.md](diesel.md)) |
+| `electric-engine-resistor` | loop | `speed` 0..1 (0.5), `load` 0..1 (0.5), `level` | an old DC electric locomotive with resistor control: blowers (noise and a 290 Hz blade tone), a compressor thumping 12 times a second while it stands, the gears' mesh whine (79 teeth, 1.25 m wheels, top speed 120 km/h) with its octave and the brushes, and a controller clack every 1.1-1.4 s while it pulls hard (`load` > 0.5) below two thirds of its top speed |
+| `electric-engine-converter` | loop | `speed`, `load`, `level` | a modern three-phase electric train: the converters' cluster of tones measured in an ICE (1180, 1830, 2420, 2750, 3070 Hz) rising 8 % as it gathers speed while it pulls, the auxiliary converter's 620 Hz, gear tone and fans (top speed 160 km/h) |
+| `electric-engine-shinkansen` | loop | `speed`, `load`, `level` | a Shinkansen: an inverter whine from 420 Hz fading as it gathers speed, the pantograph's hiss with the cube of speed and the roar of the wind (top speed 300 km/h) |
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
+| `tram-bell` | one-shot | `call` (`departure`, `warning`), `level` | the bell of a Czech Tatra tram, matched to a KT4DM's: five measured partials struck 50 times a second while the button is held; two short rings before departure, one 2.8 s ring as a warning |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
 | `waterfall` | loop | `size` 0..1, `level` | a steady roar: low-passed noise, a deep rumble and a little spray hiss, wandering every 0.25 s; the bigger, the lower and heavier |
@@ -95,6 +99,28 @@ warning bell (`zvonek vystrazniku`), measured for its partials, ring and timing:
   only re-excites its envelope (`setTargetAtTime` from wherever it rings), so a
   bell costs seven sources however long it rings. `ring` scales every ring time.
 
+**The electric engines** (`sounds/designs/electric.ts`) are loops the game drives
+with `speed` (a fraction of the train's top speed) and `load` (how hard it
+pulls); each tick glides every tone and level to the new values (0.25 s). Only
+the resistor locomotive schedules events: its compressor strokes while it
+stands and its controller notches while it pulls away, both only as far ahead
+as it is ticked. What was measured and what was not:
+
+| Design | Measured (reference) | Modelled without a measurement |
+|---|---|---|
+| `electric-engine-resistor` | the blowers' level against the rest (an electric idling at Kosice) | gears, notches, compressor: no recording of one pulling away was found |
+| `electric-engine-converter` | the five converter tones, their 8 % rise, the 620 Hz (an ICE leaving Berlin Hbf) | gear tone, fans |
+| `electric-engine-shinkansen` | the wind's roar: broadband, mostly below 1.2 kHz (a set passing Odawara) | the inverter whine, the pantograph |
+
+**The tram bell** was matched to the bell of a Tatra KT4DM (a Czech-built tram)
+ringing as its doors close: partials at 1565, 3647, 6230 (the loudest), 9295
+and 12452 Hz at -5, -12, 0, -3 and -18 dB, struck 50 times a second (a
+mains-driven electric bell), steady for the 2.8 s it rings. The design plays
+those partials as five sines under one envelope per press, rippled and ticked
+by a 50 Hz sawtooth while held; a render matches the recording's partial
+levels within 1 dB. The departure's two short rings are timed from how Czech
+drivers ring, not from a recording; the decay after release is estimated.
+
 **The water** is three loops built the same way (`sounds/designs/water.ts`).
 Continuous filtered noise has filters and gains that wander, and the scattered
 events on top (a rapid's bubbles, a fountain's droplets) are drawn from a seeded
@@ -109,6 +135,7 @@ another, measured as EBU R128 integrated loudness of a render at the defaults
 |---|---|
 | `steam-chuff` | -30.6 (-27.5 at full effort) |
 | `diesel-engine-*` | -29.5 for every engine (about -40 idling, -21 at full revs and effort) |
+| `electric-engine-*` | -29.0 to -29.5 at the defaults (`speed` 0.5, `load` 0.5) |
 | `river-rapids`, `waterfall`, `spring-fountain` | about -31 |
 | `sea-surf` | -33.7 |
 | `woods` | -38 |
@@ -207,7 +234,7 @@ in order, each with a `title` and a one-line `description`:
 
 | Category | What it holds | Designs |
 |---|---|---|
-| `trains` | locomotives and the railway, and the diesel engines of buses and trucks | horn, whistle, exhaust beat, diesel engine and its start and stop, crossing bell |
+| `trains` | locomotives and the railway, and the diesel engines of buses and trucks | horn, whistle, exhaust beat, diesel engine and its start and stop, electric engines, crossing bell, tram bell |
 | `ships` | vessels in port and at sea | ship horn |
 | `water` | ambient water, played while in view | rapids, waterfall, spring fountain, sea surf |
 | `nature` | ambient life of the land | woods |
@@ -249,6 +276,11 @@ press. Leaving the page stops everything it still plays, one-shots included.
 - the beat schedules only as far ahead as asked, at its rate; the bell strikes
   on its uneven strokes from oscillators that run for the whole loop, and stops
   when stopped;
+- the resistor locomotive clacks a notch every 1.1-1.4 s only while pulling
+  hard at low speed, only as far ahead as asked; the gears whine at their mesh
+  frequency; the converter keeps the measured tones;
+- the tram bell rings twice short or once long, keeps the measured partials,
+  and ends once rung out; the whistle keeps the measured chord shape;
 - the water loops bubble the same way every time, more the stronger they are,
   and never past what they were ticked for;
 - the bell keeps the measured shape of the recording (main tone, the x1.51
