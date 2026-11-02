@@ -10,6 +10,7 @@ import { BELL_PARTIALS, TRAM_BELL_PARTIALS, TRAM_BELL_STRIKES, WHISTLE_PIPES, be
 import { CONVERTER_RISE, CONVERTER_TONES, NOTCH_BELOW, gearMesh, rollingLevel } from "../sounds/designs/electric.ts";
 import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
+import { EDIT_TRIM } from "../sounds/designs/editor.ts";
 import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
 import {
   DIESEL_PROFILES,
@@ -145,6 +146,28 @@ describe("the designs", () => {
           v.stop(1.5);
         }
       }
+    }
+  });
+});
+
+describe("the editor sounds", () => {
+  it("play well under the other designs: the build and demolish knocks were too loud", () => {
+    expect(EDIT_TRIM).toBeLessThanOrEqual(0.35);
+    for (const id of ["edit-build", "edit-demolish"]) {
+      const { ctx, dest } = stubContext();
+      const gains: Array<{ gain: { value: number } }> = [];
+      const ctxSpy = ctx as unknown as { createGain: () => { gain: { value: number } } };
+      const make = ctxSpy.createGain;
+      ctxSpy.createGain = () => {
+        const g = make();
+        gains.push(g);
+        return g;
+      };
+      const d = soundById(id)!;
+      if (d.kind !== "oneShot") throw new Error(`${id} is a one-shot`);
+      d.play(ctx, dest, 0, resolveValues(d.params, {}));
+      // the output gain is the first node created; at the default level it is the trim
+      expect(gains[0].gain.value, id).toBeCloseTo(EDIT_TRIM);
     }
   });
 });

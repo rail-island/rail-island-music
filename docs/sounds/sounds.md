@@ -74,8 +74,8 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `church-bell` | one-shot | `pitch` 200-900 Hz (440), `strikes` 1-12 (3), `interval` 0.8-6 s (2.2), `ring` 0.3-1.5, `level` | a village church bell tolling: nine partials of a tuned bell (`CHURCH_PARTIALS`) and the clapper's clang per strike |
 | `big-ben` | one-shot | `pitch` 100-260 Hz (165, E), `strikes` (the hour, 3), `chime` `quarters` / `hour`, `ring`, `level` | the Great Bell of the Westminster clock tower: twinned, beating partials (`GREAT_BELL_PARTIALS`), struck every 4.5 s; with `quarters`, first the Westminster Quarters' last four changes on the four quarter bells (G#4 F#4 E4 B3, kept in tune with `pitch`) |
 | `notre-dame-bell` | one-shot | `pitch` 60-160 Hz (92.5, F#), `strikes` 1-12 (4), `interval` 1.5-8 s (3.4), `ring`, `level` | Emmanuel, the bourdon of Notre-Dame de Paris: a deep bell whose hum rings about 22 s (`BOURDON_PARTIALS`) |
-| `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit |
-| `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit |
+| `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit, trimmed by `EDIT_TRIM` (0.3, about -10 dB) as it plays at the listener on every edit |
+| `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit, trimmed like `edit-build` |
 
 **The crossing bell** was matched to a recording of a Czech level crossing's
 warning bell (`zvonek vystrazniku`), measured for its partials, ring and timing:
