@@ -177,6 +177,18 @@ const R = {
       licence: "Public Domain Mark 1.0",
     },
   },
+  helicopterHover: {
+    file: "helicopter-hover.mp3",
+    title: "Helicopter hovering",
+    note: "A light two-bladed helicopter in a steady hover: the slap at 11.8 Hz (about 350 rpm), the tail rotor's lines at 159 and 233 Hz the strongest, the rest broad from 125 Hz to 2 kHz and falling above, no turbine line standing out. 25 s of 29.",
+    source: { title: "G36-19 Helicopter Constant Hover", url: archive("GOLD_TAPE_36_Helicopters"), author: USC, licence: "CC0 1.0" },
+  },
+  helicopterStart: {
+    file: "helicopter-start-lift-off.mp3",
+    title: "Helicopter starting and lifting off",
+    note: "The rotor running up after the engine starts: the turbine's line near 1.5 kHz, weak (about 20 dB under the rotor). 25 s of 63.",
+    source: { title: "G36-02 Helicopter Start and Lift-Off", url: archive("GOLD_TAPE_36_Helicopters"), author: USC, licence: "CC0 1.0" },
+  },
 } satisfies Record<string, Reference>;
 
 /** The references of each sound id, in the order the page lists them. */
@@ -194,6 +206,7 @@ export const REFERENCES: Readonly<Record<string, readonly Reference[]>> = {
   "electric-engine-converter": [R.iceDeparting],
   "electric-engine-shinkansen": [R.shinkansenPassing],
   "tram-bell": [R.tramBellKt4],
+  helicopter: [R.helicopterHover, R.helicopterStart],
 };
 
 export function referencesFor(soundId: string): readonly Reference[] {

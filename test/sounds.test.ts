@@ -10,6 +10,7 @@ import { BELL_PARTIALS, TRAM_BELL_PARTIALS, TRAM_BELL_STRIKES, WHISTLE_PIPES, be
 import { CONVERTER_RISE, CONVERTER_TONES, NOTCH_BELOW, gearMesh, rollingLevel } from "../sounds/designs/electric.ts";
 import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
+import { MIN_PASS, PULSE_ATTACK, bladePass, helicopterMix, rotorRev, tailPass } from "../sounds/designs/aircraft.ts";
 import { EDIT_TRIM } from "../sounds/designs/editor.ts";
 import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
 import {
@@ -107,6 +108,8 @@ describe("the designs", () => {
       "diesel-engine-two-stroke",
       "diesel-engine-bus",
       "diesel-engine-truck",
+      // the factory maps this on its helicopters (game.sounds)
+      "helicopter",
     ]) {
       expect(soundById(id), id).toBeDefined();
     }
@@ -286,6 +289,110 @@ describe("the electric engines", () => {
     expect(CONVERTER_TONES.map((c) => c.freq)).toEqual([1180, 1830, 2420, 2750, 3070]);
     expect([...CONVERTER_TONES].sort((a, b) => b.level - a.level)[0]!.freq).toBe(1180);
     expect(CONVERTER_RISE).toBeCloseTo(0.08, 6);
+  });
+});
+
+describe("the helicopter", () => {
+  const heli = () => {
+    const d = soundById("helicopter")!;
+    if (d.kind !== "loop") throw new Error("helicopter is a loop");
+    return d;
+  };
+
+  /** Start it on a stub context whose gains record every blade pulse (a rise with PULSE_ATTACK) and every target. */
+  function recording(values: SoundValues) {
+    const { ctx, dest } = stubContext();
+    const pulses: number[] = [];
+    const calls: string[] = [];
+    const spy = ctx as unknown as { createGain: () => { gain: Record<string, unknown> } };
+    const make = spy.createGain;
+    let n = 0;
+    spy.createGain = () => {
+      const g = make();
+      const id = n++;
+      g.gain.setTargetAtTime = (v: number, at: number, tau: number) => {
+        calls.push(`${id} ${v.toFixed(6)} ${at.toFixed(6)} ${tau}`);
+        // gain 2 is the thump pulse (after the output and the thump part): one rise per blade
+        if (tau === PULSE_ATTACK && id === 2) pulses.push(at);
+      };
+      g.gain.setValueAtTime = (v: number, at: number) => calls.push(`${id} = ${v.toFixed(6)} ${at.toFixed(6)}`);
+      return g;
+    };
+    const voice = heli().start(ctx, dest, 0, values);
+    return { voice, pulses, calls };
+  }
+
+  it("is one loop in the aircraft category with the parameters the game and the factory name", () => {
+    const d = heli();
+    expect(d.category).toBe("aircraft");
+    expect(d.title).toBe("Helicopter");
+    const p = Object.fromEntries(d.params.map((x) => [x.name, x]));
+    expect(d.params.map((x) => x.name)).toEqual(["spin", "load", "size", "blades", "level"]);
+    expect(p.spin).toMatchObject({ kind: "number", min: 0, max: 1, default: 1 });
+    expect(p.load).toMatchObject({ kind: "number", min: 0, max: 1, default: 0.5 });
+    expect(p.size).toMatchObject({ kind: "number", min: 0, max: 1, default: 0.5 });
+    expect(p.blades).toMatchObject({ kind: "number", min: 2, max: 6, step: 1, default: 4 });
+    expect(soundsIn("aircraft").map((s) => s.id)).toEqual(["helicopter"]);
+  });
+
+  it("slaps at blades x the rotor's revolutions: a Bell 206 near 13 Hz, a Mil Mi-8 near 16 Hz", () => {
+    // published main rotor speeds: Bell 206 394 rpm (10.2 m), Mi-8 192 rpm (21.3 m)
+    expect(rotorRev(0) * 60).toBeGreaterThan(380);
+    expect(rotorRev(0) * 60).toBeLessThan(410);
+    expect(rotorRev(1) * 60).toBeGreaterThan(180);
+    expect(rotorRev(1) * 60).toBeLessThan(200);
+    expect(bladePass(0, 2)).toBeCloseTo(13.2, 0);
+    expect(bladePass(1, 5)).toBeCloseTo(15.8, 0);
+    expect(tailPass(0)).toBeGreaterThan(tailPass(1));
+    expect(tailPass(1)).toBeGreaterThan(bladePass(1, 6));
+    const { voice, pulses } = recording({ spin: 1, size: 0, blades: 2 });
+    voice.tick(0, 2);
+    expect(pulses.length).toBeGreaterThanOrEqual(26);
+    expect(pulses.length).toBeLessThanOrEqual(27);
+    expect(Math.max(...pulses)).toBeLessThan(2);
+    // ticking again over time already scheduled adds nothing
+    voice.tick(1, 1);
+    expect(pulses.length).toBeLessThanOrEqual(27);
+  });
+
+  it("is silent while the rotor stands, yet runs on, and spins up gliding when the game sets spin", () => {
+    for (const load of [0, 0.5, 1]) for (const size of [0, 1]) {
+      for (const level of Object.values(helicopterMix(0, load, size))) expect(level).toBe(0);
+    }
+    const { voice, pulses } = recording({ spin: 0 });
+    expect(voice.endsAt).toBe(Infinity);
+    for (let now = 0; now < 2; now += 0.05) voice.tick(now, 0.2);
+    expect(pulses).toEqual([]);
+    voice.set({ spin: 1 });
+    for (let now = 2; now < 6; now += 0.05) voice.tick(now, 0.2);
+    expect(pulses.length).toBeGreaterThan(20);
+    // the slap speeds up gradually: the gaps shrink towards the full rate's, never jumping to it
+    const gaps = pulses.slice(1).map((p, i) => p - pulses[i]!);
+    const full = 1 / bladePass(0.5, 4);
+    expect(gaps[0]!).toBeGreaterThan(full * 1.5);
+    expect(gaps[0]!).toBeLessThan(1 / MIN_PASS + 0.05);
+    for (let i = 1; i < gaps.length; i++) expect(gaps[i]!).toBeLessThanOrEqual(gaps[i - 1]! + 1e-9);
+    expect(gaps[gaps.length - 1]!).toBeCloseTo(full, 3);
+  });
+
+  it("slaps harder the more it lifts, and the bigger the lower and heavier", () => {
+    expect(helicopterMix(1, 1, 0.5).slap).toBeGreaterThan(helicopterMix(1, 0, 0.5).slap);
+    expect(helicopterMix(1, 1, 0.5).thump).toBeGreaterThan(helicopterMix(1, 0, 0.5).thump);
+    expect(helicopterMix(1, 0.5, 1).thump).toBeGreaterThan(helicopterMix(1, 0.5, 0).thump);
+    expect(helicopterMix(0.5, 0.5, 0.5).wash).toBeLessThan(helicopterMix(1, 0.5, 0.5).wash);
+  });
+
+  it("plays the same every time", () => {
+    const run = () => {
+      const r = recording({ spin: 0.3, load: 0.8, size: 0.85, blades: 4 });
+      r.voice.tick(0, 1);
+      r.voice.set({ spin: 1, load: 0.2, size: 0.85, blades: 4 });
+      for (let now = 1; now < 3; now += 0.05) r.voice.tick(now, 0.2);
+      return r.calls;
+    };
+    const a = run();
+    expect(a.length).toBeGreaterThan(100);
+    expect(run()).toEqual(a);
   });
 });
 

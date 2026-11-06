@@ -23,8 +23,8 @@ Each reference is an **excerpt** of a recording, not the whole of it:
   another, with a 20 Hz high-pass and short fades at both ends;
 - a kebab-case name: `<what>-<doing>.mp3`.
 
-A file stays under 400 kB and all of them under 5 MB (tested). They are 19
-files, about 4.2 MB.
+A file stays under 400 kB and all of them under 5 MB (tested). They are 21
+files, about 4.6 MB.
 
 ## The list (`src/references.ts`)
 
@@ -57,9 +57,11 @@ mainline and the two-stroke engine). Vite imports each file as an asset
 | `electric-engine-converter` | an ICE pulling out of Berlin Hbf (radio aporee, CC BY 3.0) |
 | `electric-engine-shinkansen` | a Shinkansen passing Odawara (radio aporee, Public Domain Mark) |
 | `tram-bell` | a Tatra KT4DM's bell at Frankfurt (Oder) (radio aporee, CC BY 3.0) |
+| `helicopter` | a light helicopter hovering; one starting and lifting off (USC Gold Tape 36, CC0) |
 
 The diesel references but the mine locomotive are CC0 sound effects of the
-USC Cinema and Sunset Editorial collections on archive.org; the steam ones come
+USC Cinema and Sunset Editorial collections on archive.org, and so are the
+helicopter ones; the steam ones come
 from the SSE library there, and the electric, Shinkansen and tram ones are radio
 aporee field recordings, also on archive.org. The crossing bell was matched to a
 recording of a Czech crossing bell that is not in the repository.

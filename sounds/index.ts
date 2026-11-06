@@ -3,6 +3,7 @@
 // export/sounds/sounds.js, which the game imports with `pnpm import:sounds`; the
 // site's Sounds page plays the same designs from source.
 
+import { helicopter } from "./designs/aircraft.ts";
 import { bigBen, churchBell, notreDameBell } from "./designs/bells.ts";
 import { editBuild, editDemolish } from "./designs/editor.ts";
 import { shipHorn } from "./designs/ships.ts";
@@ -40,6 +41,7 @@ export const SOUNDS: readonly SoundDesign[] = [
   crossingBell,
   tramBell,
   shipHorn,
+  helicopter,
   riverRapids,
   waterfall,
   springFountain,
@@ -56,6 +58,7 @@ export const SOUNDS: readonly SoundDesign[] = [
 export const CATEGORIES: readonly SoundCategoryInfo[] = [
   { id: "trains", title: "Trains", description: "Locomotives and the railway: horns, whistles, the exhaust beat, diesel engines (railcars, shunters, mainline locomotives, buses and trucks) running, starting and stopping, electric locomotives and trains old and new, the Shinkansen, the level crossing's bell and the tram bell." },
   { id: "ships", title: "Ships", description: "Vessels in port and at sea." },
+  { id: "aircraft", title: "Aircraft", description: "Aircraft in the air and on the pad: the helicopter's rotor and turbine." },
   { id: "water", title: "Water", description: "Ambient water, played while it is in view: rivers, waterfalls, springs and the sea." },
   { id: "nature", title: "Nature", description: "Ambient life of the land: woods and their birds." },
   { id: "bells", title: "Bells", description: "Tower bells tolling: a village church, Westminster's Great Bell and Notre-Dame's bourdon." },

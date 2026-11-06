@@ -1,11 +1,11 @@
 # Sounds
 
-**Covers** - the game's sound effects: every horn, whistle, engine, bell, water, woods and knock
+**Covers** - the game's sound effects: every horn, whistle, engine, rotor, bell, water, woods and knock
 Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
-`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
+`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/aircraft.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
 `sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/metrics.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`, `test/metrics.test.ts`
 **See also** - [diesel.md](diesel.md) (the diesel engines), [../site/catalog-site.md](../site/catalog-site.md),
@@ -66,6 +66,7 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `tram-bell` | one-shot | `call` (`departure`, `warning`), `level` | the bell of a Czech Tatra tram, matched to a KT4DM's: five measured partials struck 50 times a second while the button is held; two short rings before departure, one 2.8 s ring as a warning |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
+| `helicopter` | loop | `spin` 0..1 (1), `load` 0..1 (0.5), `size` 0..1 (0.5), `blades` 2-6 (4), `level` | a helicopter's rotor and turbine, shared by every helicopter: a struck pulse per blade passing (a low thump and a band of noise, harder the more it lifts) at blades x the rotor's revolutions, a turbine whine rising with the rotor, the tail rotor's buzz and the rotor wash; silent at `spin` 0 ([below](#the-helicopter)) |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
 | `waterfall` | loop | `size` 0..1, `level` | a steady roar: low-passed noise, a deep rumble and a little spray hiss, wandering every 0.25 s; the bigger, the lower and heavier |
 | `sea-surf` | loop | `strength` 0..1, `level` | the sea on a shore: a steady wash, a low rush and a hiss whose filter and level drift slowly (every 0.7 s, seeded), swelling and settling with no single waves; fuller the stronger |
@@ -112,6 +113,34 @@ as it is ticked. What was measured and what was not:
 | `electric-engine-converter` | the five converter tones, their 8 % rise, the 620 Hz (an ICE leaving Berlin Hbf) | gear tone, fans |
 | `electric-engine-shinkansen` | the wind's roar: broadband, mostly below 1.2 kHz (a set passing Odawara) | the inverter whine, the pantograph |
 
+**The helicopter** (`sounds/designs/aircraft.ts`) is one loop for every
+helicopter. The factory pins its **character** per model: `size` (0 a light
+single-engine helicopter like a Bell 206, 1 a heavy one like a Mil Mi-8: the
+bigger, the lower, slower and heavier) and `blades` (the main rotor's blades).
+The game drives it at **run time** with `spin` (the rotor's speed, a fraction of
+full: 0 stands, silent but still running as a voice) and `load` (the collective:
+climbing heavier and louder, descending lighter). Each tick glides to the new
+values, the rotor's speed with a time constant of 0.6 s (`SPIN_GLIDE`), and the
+blade pulses are scheduled only as far ahead as it is ticked, their rate
+following the same glide.
+
+| Part | What | Rate |
+|---|---|---|
+| blade slap | one struck pulse per blade: a low thump (a sine of 110-60 Hz and low-passed noise) and band-passed noise (820-440 Hz), deeper the bigger; one blade a little stronger (tracking), so the rotor lopes once a turn | blades x the rotor's revolutions (`bladePass`) |
+| turbine | three sines (x1, x1.5, x0.25 of 2600-1500 Hz, lower the bigger) and an exhaust band near 1.2 kHz, softened by a 3.2 kHz low-pass; from a third of its pitch up with `spin` | - |
+| tail rotor | a sawtooth band-limited to its 2nd and 3rd harmonics | about 6.2 x the main rotor, 2 to 3 blades (`tailPass`) |
+| wash | broadband noise, 90 Hz to 1.8-1.1 kHz | - |
+
+The rotor's revolutions follow from a tip speed that is about the same for
+every helicopter (`TIP_SPEED`, 212 m/s) and a diameter from 10.2 m (`size` 0)
+to 21.3 m (`size` 1), published figures: a Bell 206 turns at 394 rpm (2 blades:
+a slap of 13.2 Hz), a Mil Mi-8 at 192 rpm (5 blades: 15.8 Hz), so `size` 0.85
+with 4 blades (an S-92-like) slaps at 13.8 Hz. What was measured and what was not:
+
+| Measured (references) | Modelled without a measurement |
+|---|---|
+| a light two-bladed helicopter hovering: its slap (11.8 Hz) and its depth, about 11 dB; the spectrum, broad from 125 Hz to 2 kHz and falling above; the tail rotor's 2nd and 3rd harmonics (159, 233 Hz) the strongest lines. One starting up: a weak turbine line near 1.5 kHz, about 20 dB under the rotor | the heavy end of `size` (no recording of a large helicopter was used), the turbine's pitch and its rise with the rotor, how `load` weighs each part, the spin-up's glide |
+
 **The tram bell** was matched to the bell of a Tatra KT4DM (a Czech-built tram)
 ringing as its doors close: partials at 1565, 3647, 6230 (the loudest), 9295
 and 12452 Hz at -5, -12, 0, -3 and -18 dB, struck 50 times a second (a
@@ -136,6 +165,7 @@ another, measured as EBU R128 integrated loudness of a render at the defaults
 | `steam-chuff` | -30.6 (-27.5 at full effort) |
 | `diesel-engine-*` | -29.5 for every engine (about -40 idling, -21 at full revs and effort) |
 | `electric-engine-*` | -29.0 to -29.5 at the defaults (`speed` 0.5, `load` 0.5) |
+| `helicopter` | -28.8 at the defaults (-27.9 light, -30.1 heavy; -32.4 descending, -25.3 climbing) |
 | `river-rapids`, `waterfall`, `spring-fountain` | about -31 |
 | `sea-surf` | -33.7 |
 | `woods` | -38 |
@@ -236,6 +266,7 @@ in order, each with a `title` and a one-line `description`:
 |---|---|---|
 | `trains` | locomotives and the railway, and the diesel engines of buses and trucks | horn, whistle, exhaust beat, diesel engine and its start and stop, electric engines, crossing bell, tram bell |
 | `ships` | vessels in port and at sea | ship horn |
+| `aircraft` | aircraft in the air and on the pad | helicopter |
 | `water` | ambient water, played while in view | rapids, waterfall, spring fountain, sea surf |
 | `nature` | ambient life of the land | woods |
 | `bells` | tower bells tolling | church bell, Big Ben, Notre-Dame bourdon |
@@ -292,6 +323,11 @@ press. Leaving the page stops everything it still plays, one-shots included.
   down, and change engine while running;
 - the diesel fires faster as it revs and lower the bigger it is, and schedules
   only as far ahead as asked;
+- the helicopter has the parameters the game and the factory name, slaps at
+  blades x the rotor's revolutions (a Bell 206 near 13 Hz, a Mi-8 near 16 Hz)
+  only as far ahead as asked, is silent at `spin` 0 while its voice runs on,
+  speeds its slap up gradually when `spin` is set, slaps harder the more it
+  lifts, and schedules the same every time;
 - the woods sing the same birds every time, more the denser and livelier, none
   at `birds` 0;
 - the bells ring the Quarters' four last changes before the hour and end once
