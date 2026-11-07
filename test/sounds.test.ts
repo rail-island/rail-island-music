@@ -12,6 +12,7 @@ import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
 import { MIN_PASS, PULSE_ATTACK, bladePass, helicopterMix, rotorRev, tailPass } from "../sounds/designs/aircraft.ts";
 import { EDIT_TRIM } from "../sounds/designs/editor.ts";
+import { CALLS, FOOT_PROFILES, SPECIES, THUD_ATTACK, gaitOffsets, hoofRate, teamAnimals, teamShare } from "../sounds/designs/animals.ts";
 import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
 import {
   DIESEL_PROFILES,
@@ -110,6 +111,9 @@ describe("the designs", () => {
       "diesel-engine-truck",
       // the factory maps this on its helicopters (game.sounds)
       "helicopter",
+      // the factory maps these on its animal-drawn vehicles (game.sounds)
+      "hoof-beat",
+      "animal-call",
     ]) {
       expect(soundById(id), id).toBeDefined();
     }
@@ -393,6 +397,190 @@ describe("the helicopter", () => {
     const a = run();
     expect(a.length).toBeGreaterThan(100);
     expect(run()).toEqual(a);
+  });
+});
+
+describe("the animals", () => {
+  const hoof = () => {
+    const d = soundById("hoof-beat")!;
+    if (d.kind !== "loop") throw new Error("hoof-beat is a loop");
+    return d;
+  };
+
+  /** Start the hoof beat on a stub context whose gains record every footfall (a thud rising with THUD_ATTACK) and every call. */
+  function recording(values: SoundValues) {
+    const { ctx, dest } = stubContext();
+    const falls: number[] = [];
+    const calls: string[] = [];
+    const spy = ctx as unknown as { createGain: () => { gain: Record<string, unknown> } };
+    const make = spy.createGain;
+    let n = 0;
+    spy.createGain = () => {
+      const g = make();
+      const id = n++;
+      g.gain.setTargetAtTime = (v: number, at: number, tau: number) => {
+        calls.push(`${id} ${v.toFixed(6)} ${at.toFixed(6)} ${tau}`);
+        if (tau === THUD_ATTACK && v > 0) falls.push(at);
+      };
+      return g;
+    };
+    const voice = hoof().start(ctx, dest, 0, values);
+    /** Tick it as the game does, every 50 ms with a 200 ms lookahead. */
+    const run = (from: number, to: number) => {
+      for (let now = from; now < to - 1e-9; now += 0.05) voice.tick(now, 0.2);
+    };
+    return { voice, falls, calls, run };
+  }
+
+  it("are a hoof beat loop and a call one-shot in the Animals category, with the parameter names the factory and the game use", () => {
+    expect(soundsIn("animals").map((s) => s.id)).toEqual(["hoof-beat", "animal-call"]);
+    expect(CATEGORIES.find((c) => c.id === "animals")?.title).toBe("Animals");
+    const h = hoof();
+    expect(h.params.map((p) => p.name)).toEqual(["rate", "foot", "size", "stride", "count", "level"]);
+    const p = Object.fromEntries(h.params.map((x) => [x.name, x]));
+    expect(p.rate).toMatchObject({ kind: "number", min: 0, max: 16, default: 3 });
+    expect(p.foot).toMatchObject({ kind: "choice", default: "hoof" });
+    if (p.foot!.kind !== "choice") throw new Error("foot is a choice");
+    expect(p.foot!.values.map((x) => x.value)).toEqual(["hoof", "cloven", "padded"]);
+    expect(p.size).toMatchObject({ kind: "number", min: 0, max: 1, default: 0.5 });
+    expect(p.stride).toMatchObject({ kind: "number", min: 0.5, max: 3, default: 1.4, unit: "m" });
+    expect(p.count).toMatchObject({ kind: "number", min: 1, max: 6, step: 1, default: 1 });
+    const c = soundById("animal-call")!;
+    expect(c.kind).toBe("oneShot");
+    expect(c.params.map((x) => x.name)).toEqual(["species", "pitch", "level"]);
+    const species = c.params[0]!;
+    if (species.kind !== "choice") throw new Error("species is a choice");
+    expect(species.values.map((x) => x.value)).toEqual([...SPECIES]);
+    expect(species.default).toBe("horse");
+    expect(c.params[1]).toMatchObject({ kind: "number", min: 0.7, max: 1.4, default: 1 });
+  });
+
+  it("take four footfalls per stride: the rate the game derives from speed and stride", () => {
+    expect(hoofRate(1.4, 1.4)).toBeCloseTo(4);
+    expect(hoofRate(0, 1.4)).toBe(0);
+    expect(hoofRate(3, 1.5)).toBeCloseTo(8);
+  });
+
+  it("walk in four nearly even beats and trot in diagonal pairs that land together", () => {
+    const walk = gaitOffsets(2);
+    expect(walk).toEqual([0, 0.26, 0.5, 0.76]);
+    const trot = gaitOffsets(8);
+    expect(trot[1]! - trot[0]!).toBeCloseTo(0.07);
+    expect(trot[3]! - trot[2]!).toBeCloseTo(0.07);
+    const between = gaitOffsets(4.75);
+    expect(between[1]!).toBeGreaterThan(trot[1]!);
+    expect(between[1]!).toBeLessThan(walk[1]!);
+  });
+
+  it("is silent while the team stands, steps at the rate given, and stops again at rate 0", () => {
+    const { voice, falls, run } = recording({ rate: 0 });
+    expect(voice.endsAt).toBe(Infinity);
+    run(0, 2);
+    expect(falls).toEqual([]);
+    voice.set({ rate: 4 });
+    run(2, 6);
+    // four footfalls a second, one animal
+    expect(falls.length).toBeGreaterThanOrEqual(15);
+    expect(falls.length).toBeLessThanOrEqual(17);
+    expect(Math.min(...falls)).toBeGreaterThanOrEqual(2);
+    expect(Math.max(...falls)).toBeLessThan(6.2);
+    // a walk's cycle: the four gaps add up to one second at 4 footfalls a second
+    const gaps = falls.slice(1).map((f, i) => f - falls[i]!);
+    expect(gaps[0]! + gaps[1]! + gaps[2]! + gaps[3]!).toBeCloseTo(1, 6);
+    const before = falls.length;
+    voice.set({ rate: 0 });
+    run(6.2, 8);
+    expect(falls.length).toBe(before);
+  });
+
+  it("schedules only as far ahead as asked", () => {
+    const { voice, falls } = recording({ rate: 6, count: 3 });
+    voice.tick(0, 0.5);
+    expect(falls.length).toBeGreaterThan(0);
+    expect(Math.max(...falls)).toBeLessThan(0.5);
+    const n = falls.length;
+    voice.tick(0.1, 0.3);
+    expect(falls.length).toBe(n);
+  });
+
+  it("puts down more footfalls the bigger the team, out of step rather than as one louder beat", () => {
+    const count = (team: number) => {
+      const r = recording({ rate: 4, count: team });
+      r.run(0, 10);
+      return r.falls;
+    };
+    const one = count(1);
+    const four = count(4);
+    expect(four.length / one.length).toBeGreaterThan(3.6);
+    expect(four.length / one.length).toBeLessThan(4.4);
+    // the animals walk out of step: few footfalls land within 10 ms of another (all would, in step)
+    const sorted = [...four].sort((a, b) => a - b);
+    const close = sorted.slice(1).filter((f, i) => f - sorted[i]! < 0.01).length;
+    expect(close / sorted.length).toBeLessThan(0.2);
+    // each animal is a little quieter, the team louder than one
+    expect(teamShare(4)).toBeLessThan(teamShare(1));
+    expect(teamShare(4) * 4).toBeGreaterThan(teamShare(1));
+    // the team's offsets are seeded: the lead at 0, the others spread, the same every time
+    const a = teamAnimals(6);
+    expect(a[0]!.phase).toBe(0);
+    expect(new Set(a.map((x) => x.phase.toFixed(4))).size).toBe(6);
+    expect(teamAnimals(6).map((x) => x.phase)).toEqual(a.map((x) => x.phase));
+    // a team grown while it walks joins in
+    const r = recording({ rate: 4, count: 1 });
+    r.run(0, 2);
+    const solo = r.falls.length;
+    r.voice.set({ rate: 4, count: 3 });
+    r.run(2, 4);
+    expect(r.falls.length - solo).toBeGreaterThan(solo * 2.5);
+  });
+
+  it("strikes a cloven foot twice, a hoof and a padded foot once, the padded with hardly a click", () => {
+    expect(FOOT_PROFILES.cloven.claws).toBeGreaterThan(0);
+    expect(FOOT_PROFILES.hoof.claws).toBe(0);
+    expect(FOOT_PROFILES.padded.claws).toBe(0);
+    expect(FOOT_PROFILES.padded.click).toBeLessThan(FOOT_PROFILES.cloven.click);
+    expect(FOOT_PROFILES.cloven.click).toBeLessThan(FOOT_PROFILES.hoof.click);
+    expect(FOOT_PROFILES.padded.jingle).toBe(0);
+    // the measured clop of a shod hoof: 540-770 Hz
+    expect(FOOT_PROFILES.hoof.knockHz).toBeGreaterThanOrEqual(540);
+    expect(FOOT_PROFILES.hoof.knockHz).toBeLessThanOrEqual(770);
+  });
+
+  it("plays the same every time", () => {
+    const run = () => {
+      const r = recording({ rate: 7, count: 5, foot: "cloven", size: 0.7 });
+      r.run(0, 3);
+      r.voice.set({ rate: 2, count: 5, foot: "cloven", size: 0.7 });
+      r.run(3, 5);
+      return r.calls;
+    };
+    const a = run();
+    expect(a.length).toBeGreaterThan(200);
+    expect(run()).toEqual(a);
+  });
+
+  it("call every species audibly, ending by itself", () => {
+    const d = soundById("animal-call")!;
+    if (d.kind !== "oneShot") throw new Error("animal-call is a one-shot");
+    for (const species of SPECIES) {
+      const { ctx, dest, starts } = stubContext();
+      let peak = 0;
+      const spy = ctx as unknown as { createGain: () => { gain: Record<string, unknown> } };
+      const make = spy.createGain;
+      spy.createGain = () => {
+        const g = make();
+        g.gain.linearRampToValueAtTime = (v: number) => {
+          peak = Math.max(peak, v);
+        };
+        return g;
+      };
+      const v = d.play(ctx, dest, 1, { species });
+      expect(peak, species).toBeGreaterThan(0.3);
+      expect(starts.filter((s) => s.what === "osc").length, species).toBeGreaterThan(0);
+      expect(v.endsAt, species).toBeCloseTo(1 + CALLS[species].seconds + 0.1);
+      expect(CALLS[species].seconds, species).toBeGreaterThan(1);
+      expect(CALLS[species].trim, species).toBeGreaterThan(0);
+    }
   });
 });
 

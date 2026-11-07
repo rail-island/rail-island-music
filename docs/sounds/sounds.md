@@ -1,14 +1,14 @@
 # Sounds
 
-**Covers** - the game's sound effects: every horn, whistle, engine, rotor, bell, water, woods and knock
+**Covers** - the game's sound effects: every horn, whistle, engine, rotor, hoof beat, animal call, bell, water, woods and knock
 Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
-`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/aircraft.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
+`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/aircraft.ts`, `sounds/designs/animals.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
 `sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/metrics.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`, `test/metrics.test.ts`
-**See also** - [diesel.md](diesel.md) (the diesel engines), [../site/catalog-site.md](../site/catalog-site.md),
+**See also** - [diesel.md](diesel.md) (the diesel engines), [animals.md](animals.md) (the hoof beat and the animal calls), [../site/catalog-site.md](../site/catalog-site.md),
 [../guide/setup-and-build.md](../guide/setup-and-build.md); in the game,
 `rail-island-webapp` `docs/gameplay/sounds.md` (when each sound plays) and
 `docs/tooling/sound-import.md` (`pnpm import:sounds`)
@@ -67,6 +67,8 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `tram-bell` | one-shot | `call` (`departure`, `warning`), `level` | the bell of a Czech Tatra tram, matched to a KT4DM's: five measured partials struck 50 times a second while the button is held; two short rings before departure, one 2.8 s ring as a warning |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `helicopter` | loop | `spin` 0..1 (1), `load` 0..1 (0.5), `size` 0..1 (0.5), `blades` 2-6 (4), `level` | a helicopter's rotor and turbine, shared by every helicopter: a struck pulse per blade passing (a low thump and a band of noise, harder the more it lifts) at blades x the rotor's revolutions, a turbine whine rising with the rotor, the tail rotor's buzz and the rotor wash; silent at `spin` 0 ([below](#the-helicopter)) |
+| `hoof-beat` | loop | `rate` 0-16 footfalls/s per animal (3), `foot` `hoof`/`cloven`/`padded`, `size` 0..1 (0.5), `stride` 0.5-3 m (1.4), `count` 1-6 (1), `level` | a draft team's footfalls: per animal a click, a knock and a thud in the foot's character, four per gait cycle in a walk's or a trot's rhythm, the animals out of step, the harness jingling; silent at `rate` 0 ([animals.md](animals.md)) |
+| `animal-call` | one-shot | `species` `horse`/`donkey`/`mule`/`cow`/`camel`/`elephant`, `pitch` 0.7-1.4 (1), `level` | a whinny, a bray, a mule's call, a moo, a groan or a trumpet: oscillators along a pitch contour through formants, with a breath of noise; played only by the player's Horn ([animals.md](animals.md)) |
 | `river-rapids` | loop | `strength` 0..1, `level` | a river over rocks: noise through a low and a bright band-pass that wander every 0.12 s, softened, with bubbles on top (short sines rising as they burst); the stronger, the louder and the more bubbles |
 | `waterfall` | loop | `size` 0..1, `level` | a steady roar: low-passed noise, a deep rumble and a little spray hiss, wandering every 0.25 s; the bigger, the lower and heavier |
 | `sea-surf` | loop | `strength` 0..1, `level` | the sea on a shore: a steady wash, a low rush and a hiss whose filter and level drift slowly (every 0.7 s, seeded), swelling and settling with no single waves; fuller the stronger |
@@ -166,10 +168,11 @@ another, measured as EBU R128 integrated loudness of a render at the defaults
 | `diesel-engine-*` | -29.5 for every engine (about -40 idling, -21 at full revs and effort) |
 | `electric-engine-*` | -29.0 to -29.5 at the defaults (`speed` 0.5, `load` 0.5) |
 | `helicopter` | -28.8 at the defaults (-27.9 light, -30.1 heavy; -32.4 descending, -25.3 climbing) |
+| `hoof-beat` | -30.1 at the defaults (one horse walking; -25.0 four horses trotting) |
 | `river-rapids`, `waterfall`, `spring-fountain` | about -31 |
 | `sea-surf` | -33.7 |
 | `woods` | -38 |
-| a horn's blast, for comparison | about -15 |
+| a horn's blast, for comparison | about -15 (an `animal-call`: -15 to -17.5) |
 
 The water is ambient and plays as long as it is in view, so it sits under the
 running engines. Each water loop multiplies its `level` by its `WATER_TRIM`
@@ -267,6 +270,7 @@ in order, each with a `title` and a one-line `description`:
 | `trains` | locomotives and the railway, and the diesel engines of buses and trucks | horn, whistle, exhaust beat, diesel engine and its start and stop, electric engines, crossing bell, tram bell |
 | `ships` | vessels in port and at sea | ship horn |
 | `aircraft` | aircraft in the air and on the pad | helicopter |
+| `animals` | draft animals: their hooves and their calls | hoof beat, animal call |
 | `water` | ambient water, played while in view | rapids, waterfall, spring fountain, sea surf |
 | `nature` | ambient life of the land | woods |
 | `bells` | tower bells tolling | church bell, Big Ben, Notre-Dame bourdon |
@@ -328,6 +332,11 @@ press. Leaving the page stops everything it still plays, one-shots included.
   only as far ahead as asked, is silent at `spin` 0 while its voice runs on,
   speeds its slap up gradually when `spin` is set, slaps harder the more it
   lifts, and schedules the same every time;
+- the animals have the parameters the factory and the game name; the hoof beat
+  is silent at `rate` 0, steps at its rate in the gait's rhythm only as far
+  ahead as asked, puts down about `count` times the footfalls out of step, and
+  schedules the same every time; every species of the call sounds and ends by
+  itself;
 - the woods sing the same birds every time, more the denser and livelier, none
   at `birds` 0;
 - the bells ring the Quarters' four last changes before the hour and end once

@@ -28,7 +28,7 @@ describe("the reference recordings", () => {
       expect(r.file).toMatch(/^[a-z0-9-]+\.mp3$/);
       total += bytes;
     }
-    expect(total).toBeLessThan(5_000_000);
+    expect(total).toBeLessThan(6_000_000);
   });
 
   it("say where they came from, under a free licence", () => {

@@ -5,7 +5,7 @@ in git under `references/`, the list that ties them to sounds with their source
 and licence, the rules for adding one, and how the site plays them.
 **Code** - `references/`, `src/references.ts`, `src/ReferenceList.tsx`,
 `src/EffectPage.tsx`, `test/references.test.ts`
-**See also** - [diesel.md](diesel.md) (what was measured in them),
+**See also** - [diesel.md](diesel.md) and [animals.md](animals.md) (what was measured in them),
 [../site/catalog-site.md](../site/catalog-site.md) (the sound's page),
 [sounds.md](sounds.md)
 
@@ -23,8 +23,8 @@ Each reference is an **excerpt** of a recording, not the whole of it:
   another, with a 20 Hz high-pass and short fades at both ends;
 - a kebab-case name: `<what>-<doing>.mp3`.
 
-A file stays under 400 kB and all of them under 5 MB (tested). They are 21
-files, about 4.6 MB.
+A file stays under 400 kB and all of them under 6 MB (tested). They are 30
+files, about 5.4 MB.
 
 ## The list (`src/references.ts`)
 
@@ -58,10 +58,12 @@ mainline and the two-stroke engine). Vite imports each file as an asset
 | `electric-engine-shinkansen` | a Shinkansen passing Odawara (radio aporee, Public Domain Mark) |
 | `tram-bell` | a Tatra KT4DM's bell at Frankfurt (Oder) (radio aporee, CC BY 3.0) |
 | `helicopter` | a light helicopter hovering; one starting and lifting off (USC Gold Tape 36, CC0) |
+| `hoof-beat` | a horse walking on pavement; trotting on stone; steady with its tack jingling; two horses pulling a wagon; an ox cart (USC Gold Tapes 38 and 52, Red Library, CC0) |
+| `animal-call` | a horse's whinny; cows mooing; a camel grunting; an elephant trumpeting (USC Gold Tapes 12 and 38, CC0); no donkey or mule |
 
 The diesel references but the mine locomotive are CC0 sound effects of the
 USC Cinema and Sunset Editorial collections on archive.org, and so are the
-helicopter ones; the steam ones come
+helicopter and the animal ones; the steam ones come
 from the SSE library there, and the electric, Shinkansen and tram ones are radio
 aporee field recordings, also on archive.org. The crossing bell was matched to a
 recording of a Czech crossing bell that is not in the repository.

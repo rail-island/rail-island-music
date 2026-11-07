@@ -189,6 +189,60 @@ const R = {
     note: "The rotor running up after the engine starts: the turbine's line near 1.5 kHz, weak (about 20 dB under the rotor). 25 s of 63.",
     source: { title: "G36-02 Helicopter Start and Lift-Off", url: archive("GOLD_TAPE_36_Helicopters"), author: USC, licence: "CC0 1.0" },
   },
+  horseWalkPavement: {
+    file: "horse-walk-pavement.mp3",
+    title: "Horse walking on pavement",
+    note: "A shod horse walking on hard ground: four nearly even footfalls about 0.3 s apart, the knock at 580-770 Hz and a sharp click (a footfall's centroid 2.6 kHz). 15 s of 84.",
+    source: { title: "G38-10 Horse Walks on Pavement", url: archive("GOLD_TAPE_38_Horses"), author: USC, licence: "CC0 1.0" },
+  },
+  horseTrotStone: {
+    file: "horse-trot-stone.mp3",
+    title: "Horse trotting on stone",
+    note: "The trot's diagonal pairs landing 45-60 ms apart, the knock at 540-590 Hz the loudest band, a footfall falling 20 dB in about 90 ms. 16 s of 16.",
+    source: { title: "R13-53 Horse Trotting on Stone", url: archive("Red_Library_Animals_Horses_2"), author: USC, licence: "CC0 1.0" },
+  },
+  horseTackJingle: {
+    file: "horse-tack-jingle.mp3",
+    title: "Horse with its tack jingling",
+    note: "A horse at a steady walk with its tack jingling: the jingle a band near 3 kHz, about 20 dB under the hooves. 12 s of 20.",
+    source: { title: "R13-15 Horse Steady with Tack Jingle", url: archive("Red_Library_Animals_Horses_1"), author: USC, licence: "CC0 1.0" },
+  },
+  horsesPullWagon: {
+    file: "horses-pull-wagon.mp3",
+    title: "Two horses pulling a wagon",
+    note: "A team of two out of step: denser footfalls (about 6 a second), never one doubled beat. 15 s of 34.",
+    source: { title: "R22-01 Two Horses Pull Wagon", url: archive("Red_Library_Wagons"), author: USC, licence: "CC0 1.0" },
+  },
+  oxCart: {
+    file: "ox-cart.mp3",
+    title: "Ox cart",
+    note: "Cloven feet: darker footfalls (centroid about 700 Hz, most of it under 400 Hz) with frequent double knocks, and a harness bell near 5.3 kHz. 15 s of 53.",
+    source: { title: "G52-05 Ox Cart", url: archive("GOLD_TAPE_52_Wagons"), author: USC, licence: "CC0 1.0" },
+  },
+  horseWhinny: {
+    file: "horse-whinny.mp3",
+    title: "Horse whinny",
+    note: "A whinny of 1.4 s: a near-pure tone at 1470-1580 Hz falling to about 1150 Hz, joined by a second voice near 500 falling to 360 Hz. 4.5 s of 17.",
+    source: { title: "G38-15 Perfect Horse Whinny", url: archive("GOLD_TAPE_38_Horses"), author: USC, licence: "CC0 1.0" },
+  },
+  cowsMooing: {
+    file: "cows-mooing.mp3",
+    title: "Cows mooing",
+    note: "A moo of 2.3 s at 185 rising to 210-220 Hz, its loudest harmonic moving from the fundamental to near 850 Hz as the mouth opens. 7.5 s of 23.",
+    source: { title: "G12-16 Cows Mooing", url: archive("GOLD_TAPE_12_Animals"), author: USC, licence: "CC0 1.0" },
+  },
+  camelGrunt: {
+    file: "camel-grunt.mp3",
+    title: "Camel grunting",
+    note: "A groan near 130 Hz with a subharmonic near 66 Hz, its second harmonic the strongest, dark (centroid about 350 Hz). 11 s of 23.",
+    source: { title: "G12-05 Camel Grunt", url: archive("GOLD_TAPE_12_Animals"), author: USC, licence: "CC0 1.0" },
+  },
+  elephantTrumpeting: {
+    file: "elephant-trumpeting.mp3",
+    title: "Elephant trumpeting",
+    note: "A trumpet at 600 rising to 735 Hz and falling to 500 Hz, bright: its energy centred near 3 kHz. 8 s of 22.",
+    source: { title: "G12-17 Elephant Trumpeting", url: archive("GOLD_TAPE_12_Animals"), author: USC, licence: "CC0 1.0" },
+  },
 } satisfies Record<string, Reference>;
 
 /** The references of each sound id, in the order the page lists them. */
@@ -207,6 +261,9 @@ export const REFERENCES: Readonly<Record<string, readonly Reference[]>> = {
   "electric-engine-shinkansen": [R.shinkansenPassing],
   "tram-bell": [R.tramBellKt4],
   helicopter: [R.helicopterHover, R.helicopterStart],
+  "hoof-beat": [R.horseWalkPavement, R.horseTrotStone, R.horseTackJingle, R.horsesPullWagon, R.oxCart],
+  // No CC0 donkey bray or mule call could be fetched: those two species are modelled.
+  "animal-call": [R.horseWhinny, R.cowsMooing, R.camelGrunt, R.elephantTrumpeting],
 };
 
 export function referencesFor(soundId: string): readonly Reference[] {
