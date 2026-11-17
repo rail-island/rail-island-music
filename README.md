@@ -1,7 +1,7 @@
 # Rail Island Music
 
 Music for [Rail Island](https://www.railisland.com), generated from code, and the
-catalog site that plays it: [music.railisland.com](https://music.railisland.com).
+catalog site that plays it: [sound.railisland.com](https://sound.railisland.com).
 
 Public-domain classical pieces, ragtime and early jazz are written once as
 scores (ABC notation). A generator arranges each one for solo piano, a ragtime
