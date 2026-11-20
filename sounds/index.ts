@@ -6,6 +6,7 @@
 import { helicopter } from "./designs/aircraft.ts";
 import { animalCall, hoofBeat } from "./designs/animals.ts";
 import { bigBen, churchBell, notreDameBell } from "./designs/bells.ts";
+import { trainCrash } from "./designs/crash.ts";
 import { editBuild, editDemolish } from "./designs/editor.ts";
 import { shipHorn } from "./designs/ships.ts";
 import { crossingBell, locoHorn, steamChuff, steamWhistle, tramBell } from "./designs/trains.ts";
@@ -41,6 +42,7 @@ export const SOUNDS: readonly SoundDesign[] = [
   electricEngineShinkansen,
   crossingBell,
   tramBell,
+  trainCrash,
   shipHorn,
   helicopter,
   hoofBeat,
@@ -59,7 +61,7 @@ export const SOUNDS: readonly SoundDesign[] = [
 
 /** Every category, in list order; SOUNDS keeps each category's designs together in this order. */
 export const CATEGORIES: readonly SoundCategoryInfo[] = [
-  { id: "trains", title: "Trains", description: "Locomotives and the railway: horns, whistles, the exhaust beat, diesel engines (railcars, shunters, mainline locomotives, buses and trucks) running, starting and stopping, electric locomotives and trains old and new, the Shinkansen, the level crossing's bell and the tram bell." },
+  { id: "trains", title: "Trains", description: "Locomotives and the railway: horns, whistles, the exhaust beat, diesel engines (railcars, shunters, mainline locomotives, buses and trucks) running, starting and stopping, electric locomotives and trains old and new, the Shinkansen, the level crossing's bell, the tram bell and a crash." },
   { id: "ships", title: "Ships", description: "Vessels in port and at sea." },
   { id: "aircraft", title: "Aircraft", description: "Aircraft in the air and on the pad: the helicopter's rotor and turbine." },
   { id: "animals", title: "Animals", description: "Draft animals: their hooves and their calls." },

@@ -1,11 +1,11 @@
 # Sounds
 
-**Covers** - the game's sound effects: every horn, whistle, engine, rotor, hoof beat, animal call, bell, water, woods and knock
+**Covers** - the game's sound effects: every horn, whistle, engine, rotor, hoof beat, animal call, bell, crash, water, woods and knock
 Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
-`sounds/designs/trains.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/aircraft.ts`, `sounds/designs/animals.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
+`sounds/designs/trains.ts`, `sounds/designs/crash.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/aircraft.ts`, `sounds/designs/animals.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
 `sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/metrics.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`, `test/metrics.test.ts`
 **See also** - [diesel.md](diesel.md) (the diesel engines), [animals.md](animals.md) (the hoof beat and the animal calls), [../site/catalog-site.md](../site/catalog-site.md),
@@ -65,6 +65,7 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `electric-engine-shinkansen` | loop | `speed`, `load`, `level` | a Shinkansen: an inverter whine from 420 Hz fading as it gathers speed, the pantograph's hiss with the cube of speed and the roar of the wind (top speed 300 km/h) |
 | `crossing-bell` | loop | `pitch` 600-2400 Hz (1590), `interval` 0.15-1.2 s (0.49), `uneven` 0-0.3 (0.085), `ring` 0.2-2 (1), `level` | a level crossing's electric bell, matched to a recording of a Czech crossing bell (below) |
 | `tram-bell` | one-shot | `call` (`departure`, `warning`), `level` | the bell of a Czech Tatra tram, matched to a KT4DM's: five measured partials struck 50 times a second while the button is held; two short rings before departure, one 2.8 s ring as a warning |
+| `train-crash` | one-shot | `size` 0..1 (0.5), `level` | two trains colliding: an impact's thump and burst, inharmonic crumpling steel struck again as the cars behind run in, a scrape sliding down as they grind off the rail, debris settling and a rumble; lower, longer and denser the bigger ([below](#the-train-crash)) |
 | `ship-horn` | one-shot | `pitch` 50-250 Hz, `seconds` 0.3-3, `level` | two sawtooths and a square near the root through a low-pass, with a 4.5 Hz waver |
 | `helicopter` | loop | `spin` 0..1 (1), `load` 0..1 (0.5), `size` 0..1 (0.5), `blades` 2-6 (4), `level` | a helicopter's rotor and turbine, shared by every helicopter: a struck pulse per blade passing (a low thump and a band of noise, harder the more it lifts) at blades x the rotor's revolutions, a turbine whine rising with the rotor, the tail rotor's buzz and the rotor wash; silent at `spin` 0 ([below](#the-helicopter)) |
 | `hoof-beat` | loop | `rate` 0-16 footfalls/s per animal (3), `foot` `hoof`/`cloven`/`padded`, `size` 0..1 (0.5), `stride` 0.5-3 m (1.4), `count` 1-6 (1), `level` | a draft team's footfalls: per animal a click, a knock and a thud in the foot's character, four per gait cycle in a walk's or a trot's rhythm, the animals out of step, the harness jingling; silent at `rate` 0 ([animals.md](animals.md)) |
@@ -151,6 +152,22 @@ those partials as five sines under one envelope per press, rippled and ticked
 by a 50 Hz sawtooth while held; a render matches the recording's partial
 levels within 1 dB. The departure's two short rings are timed from how Czech
 drivers ring, not from a recording; the decay after release is estimated.
+
+**The train crash** (`sounds/designs/crash.ts`) is a one-shot of 2.2 s (`size`
+0) to 3.4 s (`size` 1, `crashLength`), which the game plays at the point where
+two trains collide. It was **modelled without a reference recording**: nothing
+in it is measured.
+
+| Part | What |
+|---|---|
+| impact | a sine falling from 80-60 Hz to 28 Hz and a low-passed burst of noise, struck together |
+| steel | six inharmonic partials (`CRASH_METAL`: x1, 1.57, 2.36, 3.62, 5.1, 7.13 of 340-190 Hz, lower the bigger, `metalBase`), each sagging 7 % in pitch, struck at the impact and three times more, softer (`CRASH_CRUMPLES`), as the cars behind run into the ones in front |
+| scrape | band-passed noise (Q 6) sliding from 3.1 kHz to 900 Hz over 1.3-1.7 s |
+| debris | 14-28 short knocks of band-passed noise, 0.5-4 kHz, scattered over the crash and thinning out, from a seeded sequence so a render is the same every time |
+| rumble | low-passed noise (220-140 Hz) dying away over the whole crash |
+
+At the defaults it renders at about -20 LUFS, between a running engine and a
+horn's blast: it is the loudest thing a train can do short of its horn.
 
 **The water** is three loops built the same way (`sounds/designs/water.ts`).
 Continuous filtered noise has filters and gains that wander, and the scattered

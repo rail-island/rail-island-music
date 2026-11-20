@@ -12,6 +12,7 @@ import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
 import { MIN_PASS, PULSE_ATTACK, bladePass, helicopterMix, rotorRev, tailPass } from "../sounds/designs/aircraft.ts";
 import { EDIT_TRIM } from "../sounds/designs/editor.ts";
+import { CRASH_CRUMPLES, CRASH_METAL, crashLength, metalBase } from "../sounds/designs/crash.ts";
 import { CALLS, FOOT_PROFILES, SPECIES, THUD_ATTACK, gaitOffsets, hoofRate, teamAnimals, teamShare } from "../sounds/designs/animals.ts";
 import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
 import {
@@ -102,6 +103,8 @@ describe("the designs", () => {
       "edit-build",
       "edit-demolish",
       "woods",
+      // played where two trains collide
+      "train-crash",
       // the factory maps these on its diesel vehicles (game.sounds)
       "diesel-engine-railcar",
       "diesel-engine-shunter",
@@ -611,6 +614,25 @@ describe("the tram bell", () => {
   it("whistles in the chord shape measured in a steam whistle, the top pipe loudest", () => {
     expect(WHISTLE_PIPES.map(([r]) => r)).toEqual([0.357, 1, 1.438, 1.727]);
     expect([...WHISTLE_PIPES].sort((a, b) => b[1] - a[1])[0]![0]).toBe(1.727);
+  });
+});
+
+describe("the train crash", () => {
+  it("ends by itself, later for a bigger crash", () => {
+    const d = soundById("train-crash")!;
+    if (d.kind !== "oneShot") throw new Error("a one-shot");
+    const small = d.play(stubContext().ctx, stubContext().dest, 0, { size: 0 }).endsAt;
+    const big = d.play(stubContext().ctx, stubContext().dest, 0, { size: 1 }).endsAt;
+    expect(small).toBeGreaterThan(2);
+    expect(big).toBeGreaterThan(small);
+    expect(big).toBeCloseTo(crashLength(1) + 0.1);
+  });
+
+  it("is lower the heavier the trains, with inharmonic steel struck again as the cars behind run in", () => {
+    expect(metalBase(1)).toBeLessThan(metalBase(0));
+    for (let i = 1; i < CRASH_METAL.length; i++) expect(CRASH_METAL[i]! / CRASH_METAL[i - 1]!).not.toBeCloseTo(2, 1);
+    expect(CRASH_CRUMPLES[0]).toEqual([0, 1]);
+    for (let i = 1; i < CRASH_CRUMPLES.length; i++) expect(CRASH_CRUMPLES[i]![1]).toBeLessThan(CRASH_CRUMPLES[i - 1]![1]);
   });
 });
 
