@@ -78,7 +78,7 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `church-bell` | one-shot | `pitch` 200-900 Hz (440), `strikes` 1-12 (3), `interval` 0.8-6 s (2.2), `ring` 0.3-1.5, `level` | a village church bell tolling: nine partials of a tuned bell (`CHURCH_PARTIALS`) and the clapper's clang per strike |
 | `big-ben` | one-shot | `pitch` 100-260 Hz (165, E), `strikes` (the hour, 3), `chime` `quarters` / `hour`, `ring`, `level` | the Great Bell of the Westminster clock tower: twinned, beating partials (`GREAT_BELL_PARTIALS`), struck every 4.5 s; with `quarters`, first the Westminster Quarters' last four changes on the four quarter bells (G#4 F#4 E4 B3, kept in tune with `pitch`) |
 | `notre-dame-bell` | one-shot | `pitch` 60-160 Hz (92.5, F#), `strikes` 1-12 (4), `interval` 1.5-8 s (3.4), `ring`, `level` | Emmanuel, the bourdon of Notre-Dame de Paris: a deep bell whose hum rings about 22 s (`BOURDON_PARTIALS`) |
-| `token-coins` | one-shot | `coins` 1-5 (1), `pitch` 0.8-1.25 (1), `level` | tokens earned: one clink of a gold coin per coin, about 85 ms apart (`coinTimes`), each a struck disc of five inharmonic partials (`COIN_PARTIALS`, from 2350 Hz) with a tick of its edge ([below](#the-rewards)) |
+| `token-coins` | one-shot | `coins` 1-5 (1), `pitch` 0.8-1.25 (1), `level` | tokens earned: small coins jingling softly, one coin about every 85 ms (`coinTimes`), each a faint tick and three touches of coin on coin within 70 ms, high (`JINGLE_BASE` 4600 Hz +-25 %) and damped within 0.13 s (`JINGLE_PARTIALS`) ([below](#the-rewards)) |
 | `gift-fanfare` | one-shot | `level` | a gift has arrived: a 2.6 s brass fanfare in C major (`FANFARE_NOTES`), a cymbal's shimmer and a timpani stroke under the held chord |
 | `gift-take` | one-shot | `level` | a gift taken into the collection: the wrapping torn open (noise sweeping up), then a glittering chime arpeggio (C6 E6 G6 C7 E7) landing on a soft C major chord |
 | `shop-buy` | one-shot | `level` | an item bought with tokens: the register's clack, three coins into the till and its two-tone ka-ching |
@@ -176,13 +176,15 @@ horn's blast: it is the loudest thing a train can do short of its horn.
 **The rewards** (`sounds/designs/rewards.ts`) are what the player hears when
 something is given to them; like the editor's knocks they are not placed in the
 world, and each is trimmed by `REWARD_TRIM` (0.45). They were **modelled without a
-reference recording**. A coin is five sines struck together, each ringing
-0.1-0.42 s, and a band-passed tick of its edge; the coins of one payment differ a
-little in pitch and fall slightly unevenly, from a seeded sequence. The fanfare's
+reference recording**. The tokens' coins jingle rather than ding: each coin is a
+faint high-passed tick and three soft touches, three sines each, damped within
+0.13 s, through a gentle 9 kHz low-pass; the touches differ in pitch and fall
+slightly unevenly, from a seeded sequence. The till's coins in `shop-buy` are
+five sines struck together (`COIN_PARTIALS`, from 2350 Hz), each ringing 0.1-0.42 s. The fanfare's
 brass is two sawtooths detuned by 12 cents through a low-pass that opens on each
 attack; its held chord swells and wavers at 5.5 Hz. The chimes of `gift-take` and
 `shop-buy` are a sine with two bright overtones (x2.76, x5.4). At the defaults a
-single coin renders at about -32 LUFS (three coins -21), `gift-take` and
+single coin renders at about -35 LUFS (three coins -28), `gift-take` and
 `shop-buy` near -20 and the fanfare -17.5, about a horn's blast: tokens come often,
 a gift rarely.
 

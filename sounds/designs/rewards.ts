@@ -3,8 +3,8 @@
 // them at the listener, like the editor's knocks. Modelled without a reference
 // recording: nothing in them is measured.
 //
-//   * token-coins  - gold coins clinking as tokens are earned: one bright, ringing
-//                    clink per coin, falling onto the ones before
+//   * token-coins  - small coins jingling softly as tokens are earned: per coin a
+//                    few tiny, high, quickly damped touches of coin on coin
 //   * gift-fanfare - a gift has arrived: a short brass fanfare in C major, a
 //                    triplet pickup into a held chord, with a cymbal's shimmer
 //   * gift-take    - a gift is taken into the collection: a paper rustle as it is
@@ -42,6 +42,23 @@ export const COIN_BASE = 2350;
 
 /** The gap between two coins of one payment (s). */
 export const COIN_GAP = 0.085;
+
+/**
+ * The partials of a small coin touching another, as [ratio, level, ring in s]:
+ * high and quickly damped, so a payment jingles softly rather than dings.
+ */
+export const JINGLE_PARTIALS = [
+  [1, 1, 0.13],
+  [1.47, 0.45, 0.09],
+  [2.09, 0.22, 0.06],
+] as const;
+
+/** A jingle touch's lowest partial (Hz) at `pitch` 1; each touch lands within +-25 % of it. */
+export const JINGLE_BASE = 4600;
+
+/** How many touches one coin makes as it settles among the others, and over how long (s). */
+export const JINGLE_TOUCHES = 3;
+export const JINGLE_SPREAD = 0.07;
 
 const COINS: SoundParam = { name: "coins", title: "Coins", kind: "number", min: 1, max: 5, step: 1, default: 1 };
 const PITCH: SoundParam = { name: "pitch", title: "Pitch", kind: "number", min: 0.8, max: 1.25, step: 0.01, default: 1 };
@@ -91,18 +108,53 @@ function clink(
   return end;
 }
 
+/** One small touch of coin on coin: a few high partials, damped at once. Returns when it is silent. */
+function touch(ctx: BaseAudioContext, dest: AudioNode, at: number, base: number, strength: number, sources: AudioScheduledSourceNode[]): number {
+  let end = at;
+  for (const [ratio, level, ring] of JINGLE_PARTIALS) {
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(base * ratio, at);
+    const g = gain(ctx);
+    osc.connect(g).connect(dest);
+    strike(g.gain, at, 0.16 * level * strength, ring);
+    osc.start(at);
+    osc.stop(at + ring + 0.02);
+    sources.push(osc);
+    end = Math.max(end, at + ring + 0.02);
+  }
+  return end;
+}
+
 function coinsVoice(ctx: BaseAudioContext, dest: AudioNode, t: number, v: SoundValues): Voice {
   const out = gain(ctx, REWARD_TRIM * num(v, "level"));
   out.connect(dest);
+  // a gentle top: the jingle shimmers without hissing
+  const soft = filter(ctx, "lowpass", 9000, 0.5);
+  soft.connect(out);
   const sources: AudioScheduledSourceNode[] = [];
   const coins = Math.round(num(v, "coins"));
   const pitch = num(v, "pitch");
   const rnd = seeded(0xc01);
   let end = t;
   coinTimes(coins).forEach((dt, i) => {
-    // each coin a little different, the later ones a touch softer as they settle
-    const base = COIN_BASE * pitch * (0.94 + 0.12 * rnd());
-    end = Math.max(end, clink(ctx, out, t + dt, base, 1 - 0.08 * i, sources));
+    const at = t + dt;
+    const strength = 1 - 0.1 * i;
+    // the coin's first contact: a faint tick of its edge
+    const tick = noiseSource(ctx, false);
+    const hp = filter(ctx, "highpass", 7000, 0.7);
+    const tg = gain(ctx);
+    tick.connect(hp).connect(tg).connect(soft);
+    strike(tg.gain, at, 0.05 * strength, 0.015);
+    tick.start(at);
+    tick.stop(at + 0.03);
+    sources.push(tick);
+    // then it settles among the others: a few touches, each softer, each its own pitch
+    for (let k = 0; k < JINGLE_TOUCHES; k++) {
+      const when = at + (k === 0 ? 0 : JINGLE_SPREAD * (k / JINGLE_TOUCHES + 0.3 * rnd()));
+      const base = JINGLE_BASE * pitch * (0.75 + 0.5 * rnd());
+      end = Math.max(end, touch(ctx, soft, when, base, strength * (1 - 0.25 * k), sources));
+    }
   });
   return voiceOf(out, sources, end + 0.05);
 }
