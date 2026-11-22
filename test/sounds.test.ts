@@ -12,6 +12,7 @@ import { WATER_TRIM, seeded } from "../sounds/designs/water.ts";
 import { birdGap } from "../sounds/designs/nature.ts";
 import { MIN_PASS, PULSE_ATTACK, bladePass, helicopterMix, rotorRev, tailPass } from "../sounds/designs/aircraft.ts";
 import { EDIT_TRIM } from "../sounds/designs/editor.ts";
+import { COIN_GAP, FANFARE_LENGTH, FANFARE_NOTES, REWARD_TRIM, coinTimes } from "../sounds/designs/rewards.ts";
 import { CRASH_CRUMPLES, CRASH_METAL, crashLength, metalBase } from "../sounds/designs/crash.ts";
 import { CALLS, FOOT_PROFILES, SPECIES, THUD_ATTACK, gaitOffsets, hoofRate, teamAnimals, teamShare } from "../sounds/designs/animals.ts";
 import { hourChime, WESTMINSTER_CHANGES, bellTail, CHURCH_PARTIALS } from "../sounds/designs/bells.ts";
@@ -105,6 +106,11 @@ describe("the designs", () => {
       "woods",
       // played where two trains collide
       "train-crash",
+      // played as tokens are earned, a gift arrives or is taken, an item is bought
+      "token-coins",
+      "gift-fanfare",
+      "gift-take",
+      "shop-buy",
       // the factory maps these on its diesel vehicles (game.sounds)
       "diesel-engine-railcar",
       "diesel-engine-shunter",
@@ -633,6 +639,49 @@ describe("the train crash", () => {
     for (let i = 1; i < CRASH_METAL.length; i++) expect(CRASH_METAL[i]! / CRASH_METAL[i - 1]!).not.toBeCloseTo(2, 1);
     expect(CRASH_CRUMPLES[0]).toEqual([0, 1]);
     for (let i = 1; i < CRASH_CRUMPLES.length; i++) expect(CRASH_CRUMPLES[i]![1]).toBeLessThan(CRASH_CRUMPLES[i - 1]![1]);
+  });
+});
+
+describe("the rewards", () => {
+  function play(id: string, values: SoundValues = {}) {
+    const { ctx, dest, starts } = stubContext();
+    const d = soundById(id)!;
+    if (d.kind !== "oneShot") throw new Error(`${id} is a one-shot`);
+    return { voice: d.play(ctx, dest, 0, values), starts };
+  }
+
+  it("are one-shots of the rewards category that end by themselves", () => {
+    for (const id of ["token-coins", "gift-fanfare", "gift-take", "shop-buy"]) {
+      const d = soundById(id)!;
+      expect(d.category, id).toBe("rewards");
+      const end = play(id).voice.endsAt;
+      expect(end, id).toBeGreaterThan(0.2);
+      expect(end, id).toBeLessThan(3);
+    }
+    expect(REWARD_TRIM).toBeLessThan(0.6);
+  });
+
+  it("clink once per coin, about COIN_GAP apart, the same every time", () => {
+    expect(coinTimes(1)).toEqual([0]);
+    const five = coinTimes(5);
+    expect(five).toHaveLength(5);
+    for (let i = 1; i < five.length; i++) {
+      const gap = five[i]! - five[i - 1]!;
+      expect(gap).toBeGreaterThan(COIN_GAP * 0.75);
+      expect(gap).toBeLessThan(COIN_GAP * 1.3);
+    }
+    expect(coinTimes(5)).toEqual(five);
+    const strikesAt = (coins: number) => new Set(play("token-coins", { coins }).starts.filter((s) => s.what === "noise").map((s) => s.at)).size;
+    expect(strikesAt(1)).toBe(1);
+    expect(strikesAt(4)).toBe(4);
+  });
+
+  it("play the fanfare's pickup into a held chord that ends before the sound does", () => {
+    const last = FANFARE_NOTES[FANFARE_NOTES.length - 1]!;
+    expect(last[1].length).toBeGreaterThanOrEqual(3);
+    expect(last[2]).toBe(Math.max(...FANFARE_NOTES.map((n) => n[2])));
+    expect(last[0] + last[2]).toBeLessThan(FANFARE_LENGTH);
+    expect(play("gift-fanfare").voice.endsAt).toBeCloseTo(FANFARE_LENGTH);
   });
 });
 

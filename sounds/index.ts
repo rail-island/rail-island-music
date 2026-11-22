@@ -8,6 +8,7 @@ import { animalCall, hoofBeat } from "./designs/animals.ts";
 import { bigBen, churchBell, notreDameBell } from "./designs/bells.ts";
 import { trainCrash } from "./designs/crash.ts";
 import { editBuild, editDemolish } from "./designs/editor.ts";
+import { giftFanfare, giftTake, shopBuy, tokenCoins } from "./designs/rewards.ts";
 import { shipHorn } from "./designs/ships.ts";
 import { crossingBell, locoHorn, steamChuff, steamWhistle, tramBell } from "./designs/trains.ts";
 import { electricEngineConverter, electricEngineResistor, electricEngineShinkansen } from "./designs/electric.ts";
@@ -55,6 +56,10 @@ export const SOUNDS: readonly SoundDesign[] = [
   churchBell,
   bigBen,
   notreDameBell,
+  tokenCoins,
+  giftFanfare,
+  giftTake,
+  shopBuy,
   editBuild,
   editDemolish,
 ];
@@ -68,6 +73,7 @@ export const CATEGORIES: readonly SoundCategoryInfo[] = [
   { id: "water", title: "Water", description: "Ambient water, played while it is in view: rivers, waterfalls, springs and the sea." },
   { id: "nature", title: "Nature", description: "Ambient life of the land: woods and their birds." },
   { id: "bells", title: "Bells", description: "Tower bells tolling: a village church, Westminster's Great Bell and Notre-Dame's bourdon." },
+  { id: "rewards", title: "Rewards", description: "What the player hears when something is given to them: tokens earned, a gift arriving and taken, an item bought." },
   { id: "editor", title: "Editor", description: "Feedback of the map editor: building and demolishing." },
 ];
 

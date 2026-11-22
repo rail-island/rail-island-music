@@ -1,12 +1,12 @@
 # Sounds
 
-**Covers** - the game's sound effects: every horn, whistle, engine, rotor, hoof beat, animal call, bell, crash, water, woods and knock
+**Covers** - the game's sound effects: every horn, whistle, engine, rotor, hoof beat, animal call, bell, crash, water, woods, knock, coin and fanfare
 Rail Island plays is a design here, synthesized at run time with Web Audio. This
 document covers the contract a design implements, the designs and their
 parameters and categories, the export the game imports, and auditioning them on the site's catalog.
 **Code** - `sounds/types.ts`, `sounds/nodes.ts`, `sounds/index.ts`,
 `sounds/designs/trains.ts`, `sounds/designs/crash.ts`, `sounds/designs/diesel.ts`, `sounds/designs/electric.ts`, `sounds/designs/ships.ts`, `sounds/designs/aircraft.ts`, `sounds/designs/animals.ts`, `sounds/designs/water.ts`, `sounds/designs/nature.ts`,
-`sounds/designs/bells.ts`, `sounds/designs/editor.ts`,
+`sounds/designs/bells.ts`, `sounds/designs/rewards.ts`, `sounds/designs/editor.ts`,
 `generator/sounds.ts`, `generator/metrics.ts`, `generator/renderSound.ts`, `src/EffectPage.tsx`, `test/sounds.test.ts`, `test/metrics.test.ts`
 **See also** - [diesel.md](diesel.md) (the diesel engines), [animals.md](animals.md) (the hoof beat and the animal calls), [../site/catalog-site.md](../site/catalog-site.md),
 [../guide/setup-and-build.md](../guide/setup-and-build.md); in the game,
@@ -78,6 +78,10 @@ the bundle's declarations, so it must stay valid as a `.d.ts` on its own.
 | `church-bell` | one-shot | `pitch` 200-900 Hz (440), `strikes` 1-12 (3), `interval` 0.8-6 s (2.2), `ring` 0.3-1.5, `level` | a village church bell tolling: nine partials of a tuned bell (`CHURCH_PARTIALS`) and the clapper's clang per strike |
 | `big-ben` | one-shot | `pitch` 100-260 Hz (165, E), `strikes` (the hour, 3), `chime` `quarters` / `hour`, `ring`, `level` | the Great Bell of the Westminster clock tower: twinned, beating partials (`GREAT_BELL_PARTIALS`), struck every 4.5 s; with `quarters`, first the Westminster Quarters' last four changes on the four quarter bells (G#4 F#4 E4 B3, kept in tune with `pitch`) |
 | `notre-dame-bell` | one-shot | `pitch` 60-160 Hz (92.5, F#), `strikes` 1-12 (4), `interval` 1.5-8 s (3.4), `ring`, `level` | Emmanuel, the bourdon of Notre-Dame de Paris: a deep bell whose hum rings about 22 s (`BOURDON_PARTIALS`) |
+| `token-coins` | one-shot | `coins` 1-5 (1), `pitch` 0.8-1.25 (1), `level` | tokens earned: one clink of a gold coin per coin, about 85 ms apart (`coinTimes`), each a struck disc of five inharmonic partials (`COIN_PARTIALS`, from 2350 Hz) with a tick of its edge ([below](#the-rewards)) |
+| `gift-fanfare` | one-shot | `level` | a gift has arrived: a 2.6 s brass fanfare in C major (`FANFARE_NOTES`), a cymbal's shimmer and a timpani stroke under the held chord |
+| `gift-take` | one-shot | `level` | a gift taken into the collection: the wrapping torn open (noise sweeping up), then a glittering chime arpeggio (C6 E6 G6 C7 E7) landing on a soft C major chord |
+| `shop-buy` | one-shot | `level` | an item bought with tokens: the register's clack, three coins into the till and its two-tone ka-ching |
 | `edit-build` | one-shot | `level` | a falling sine thud with a short burst of grit, trimmed by `EDIT_TRIM` (0.3, about -10 dB) as it plays at the listener on every edit |
 | `edit-demolish` | one-shot | `level` | a lower, longer thud and a long crumble of low-passed grit, trimmed like `edit-build` |
 
@@ -168,6 +172,19 @@ in it is measured.
 
 At the defaults it renders at about -20 LUFS, between a running engine and a
 horn's blast: it is the loudest thing a train can do short of its horn.
+
+**The rewards** (`sounds/designs/rewards.ts`) are what the player hears when
+something is given to them; like the editor's knocks they are not placed in the
+world, and each is trimmed by `REWARD_TRIM` (0.45). They were **modelled without a
+reference recording**. A coin is five sines struck together, each ringing
+0.1-0.42 s, and a band-passed tick of its edge; the coins of one payment differ a
+little in pitch and fall slightly unevenly, from a seeded sequence. The fanfare's
+brass is two sawtooths detuned by 12 cents through a low-pass that opens on each
+attack; its held chord swells and wavers at 5.5 Hz. The chimes of `gift-take` and
+`shop-buy` are a sine with two bright overtones (x2.76, x5.4). At the defaults a
+single coin renders at about -32 LUFS (three coins -21), `gift-take` and
+`shop-buy` near -20 and the fanfare -17.5, about a horn's blast: tokens come often,
+a gift rarely.
 
 **The water** is three loops built the same way (`sounds/designs/water.ts`).
 Continuous filtered noise has filters and gains that wander, and the scattered
@@ -291,6 +308,7 @@ in order, each with a `title` and a one-line `description`:
 | `water` | ambient water, played while in view | rapids, waterfall, spring fountain, sea surf |
 | `nature` | ambient life of the land | woods |
 | `bells` | tower bells tolling | church bell, Big Ben, Notre-Dame bourdon |
+| `rewards` | what the player is given | tokens, gift arrives, gift taken, bought |
 | `editor` | feedback of the map editor | build, demolish |
 
 `SOUNDS` keeps each category's designs together, in the order of `CATEGORIES`
@@ -356,6 +374,8 @@ press. Leaving the page stops everything it still plays, one-shots included.
   itself;
 - the woods sing the same birds every time, more the denser and livelier, none
   at `birds` 0;
+- the rewards are one-shots that end by themselves, clink once per coin about
+  `COIN_GAP` apart the same every time, and the fanfare's held chord ends it;
 - the bells ring the Quarters' four last changes before the hour and end once
   rung out;
 - values are resolved as described;
